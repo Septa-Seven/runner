@@ -1,180 +1,209 @@
 import random
-from utils import is_outside_box, circles_collide, point_in_circle, line_and_circle_collide, Vec
+
+from utils import circles_collide, point_in_circle, Vec
+from config import GameConfig
 
 
 class Player:
-    WAVE_COST = 3
-    ACTION_TIMEOUT = 10
-    BULLET_RELOAD_TIMEOUT = 30
-    MAX_BULLET = 3
+    def __init__(self, id: int, position: Vec, config: GameConfig):
+        self.config = config
 
-    def __init__(self, id: int, position: Vec):
         self.id = id
         self.position = position
-        self.speed = 4.0
-        self.direction = Vec(0.0, 0.0)
-        self.radius = 10
         self.score = 0
 
-        self.action_timeout = 0
+        # TODO bad variable names
+        self.bullet_reload_timeout = self.config.BULLET_RELOAD_TIMEOUT
+        self.bullet_count = self.config.MAX_BULLETS
         self.invulnerability_timeout = 0
-        self.bullet_timeout = self.BULLET_RELOAD_TIMEOUT
-        self.bullet_count = self.MAX_BULLET
+        self.shot_timeout = 0
 
-    def change_direction(self, direction: Vec):
-        self.direction = direction
-
-    def tick(self, box_width: int, box_height: int):
-        self.move(box_width, box_height)
-        self.timeouts()
-
-    def move(self, box_width: float, box_height: float):
-        self.position = self.position + self.direction * self.speed
+    def move(self, direction: Vec):
+        self.position = self.position + direction * self.config.PLAYER_SPEED
 
         # player can't move outside the box
-        self.position.x = max(0.0, min(self.position.x, box_width))
-        self.position.y = max(0.0, min(self.position.y, box_height))
+        self.position.x = max(0.0, min(self.position.x, self.config.BOX_WIDTH))
+        self.position.y = max(0.0, min(self.position.y, self.config.BOX_HEIGHT))
 
     def timeouts(self):
-        if self.action_timeout > 0:
-            self.action_timeout -= 1
+        if self.shot_timeout > 0:
+            self.shot_timeout -= 1
 
         if self.invulnerability_timeout > 0:
             self.invulnerability_timeout -= 1
 
-        if self.bullet_count < self.MAX_BULLET:
-            self.bullet_timeout -= 1
+        if self.bullet_count < self.config.MAX_BULLETS:
+            self.bullet_reload_timeout -= 1
 
-            if self.bullet_timeout == 0:
+            if self.bullet_reload_timeout == 0:
                 self.bullet_count += 1
-                self.bullet_timeout = self.BULLET_RELOAD_TIMEOUT
+                self.bullet_reload_timeout = self.config.BULLET_RELOAD_TIMEOUT
 
     def shot(self, direction: Vec, tick: int):
         if self.bullet_count > 0 and not direction.is_zero() and self.try_to_set_action_timeout():
             self.bullet_count -= 1
-            return Bullet(self, self.position, direction, tick)
-
-    def wave(self, tick: int):
-        if self.score >= self.WAVE_COST and self.try_to_set_action_timeout():
-            self.score -= self.WAVE_COST
-            return Wave(self, self.position, tick)
+            return Bullet(self, self.position, direction, tick, self.config)
 
     def try_to_set_action_timeout(self):
-        if self.action_timeout > 0 or self.invulnerability_timeout > 0:
+        if self.shot_timeout > 0 or self.invulnerability_timeout > 0:
             return False
 
-        self.action_timeout = self.ACTION_TIMEOUT
+        self.shot_timeout = self.config.SHOT_TIMEOUT
         return True
 
     def invulnerability(self):
         if self.invulnerability_timeout == 0:
-            self.invulnerability_timeout = 120
+            self.invulnerability_timeout = self.config.INVULNERABILITY_TIMEOUT
 
 
 class Bullet:
-    SPEED = 8.0
-
-    def __init__(self, player: Player, position: Vec, direction: Vec, created_at: int):
+    def __init__(self, player: Player, position: Vec, direction: Vec, created_at: int, config: GameConfig):
+        self.config = config
         self.player = player
         self.position = position
-        self.velocity = Vec.unit(direction) * self.SPEED
+        self.velocity = Vec.unit(direction) * self.config.BULLET_SPEED
         self.created_at = created_at
-        self.radius = 5
-        self.health = 3
+        self.strength = self.config.BULLET_STRENGTH
 
-    def move(self, box_width: float, box_height: float):
+    def move(self):
         self.position = self.position + self.velocity
 
         # get normal
         if self.position.x < 0:
             x = 1
-        elif self.position.x > box_width:
+        elif self.position.x > self.config.BOX_WIDTH:
             x = -1
         else:
             x = 0
 
         if self.position.y < 0:
             y = 1
-        elif self.position.y > box_height:
+        elif self.position.y > self.config.BOX_HEIGHT:
             y = -1
         else:
             y = 0
 
         # reflect
         if x != 0 or y != 0:
-            self.health -= 1
+            self.strength -= 1
             self.velocity = Vec.reflect(self.velocity, Vec(x, y))
 
-        self.position.x = max(0.0, min(self.position.x, box_width))
-        self.position.y = max(0.0, min(self.position.y, box_height))
+        self.position.x = max(0.0, min(self.position.x, self.config.BOX_WIDTH))
+        self.position.y = max(0.0, min(self.position.y, self.config.BOX_HEIGHT))
 
 
-class Wave:
-    SPEED = 10.0
-
-    def __init__(self, player, position: Vec, created_at: int):
-        self.position = position
-        self.player = player
-        self.created_at = created_at
-        self.radius = 5.0
-
-    def spread(self):
-        self.radius += self.SPEED
+# class Wave:
+#     SPEED = 10.0
+#
+#     def __init__(self, player, position: Vec, created_at: int):
+#         self.position = position
+#         self.player = player
+#         self.created_at = created_at
+#         self.radius = 0.0
+#
+#     def spread(self):
+#         self.radius += self.SPEED
 
 
 class Game:
-    def __init__(self, box_width: float, box_height: float):
-        self.box_width = box_width
-        self.box_height = box_height
-        self.players = []
+    def __init__(self, config: GameConfig):
+        self.config = config
+        self.players = [
+            Player(player_id, Vec(random.randint(0, config.BOX_WIDTH), random.randint(0, config.BOX_HEIGHT)), config)
+            for player_id in range(config.PLAYERS)
+        ]
+
         self.bullets = []
         self.waves = []
         self.ticks = 0
 
-    def tick(self):
-        self.bullets[:] = [bullet for bullet in self.bullets if bullet.health <= 0]
+    def tick(self, players_commands):
+        moves = []
+        shots = []
+        for client_id, command in players_commands.items():
+            move, shot = command
+            if move is not None:
+                moves.append(move)
+            if shot is not None:
+                shots.append(shot)
 
-        for wave_index in range(len(self.waves), -1, -1):
-            wave = self.waves[wave_index]
-            if self.box_width < wave.radius:
-                self.waves.remove(wave_index)
-                continue
-
-            wave.spread()
-
-            self.bullets[:] = [
-                bullet
-                for bullet in self.bullets
-                if (wave.player != bullet.player
-                    and bullet.created_at <= wave.created_at
-                    and point_in_circle(bullet.position, wave.position, wave.radius))
-            ]
+        # for wave_index in range(len(self.waves), -1, -1):
+        #     wave = self.waves[wave_index]
+        #     if self.config.BOX_WIDTH < wave.radius:
+        #         self.waves.remove(wave_index)
+        #         continue
+        #
+        #     wave.spread()
+        #
+        #     self.bullets[:] = [
+        #         bullet
+        #         for bullet in self.bullets
+        #         if (wave.player != bullet.player
+        #             and bullet.created_at <= wave.created_at
+        #             and point_in_circle(bullet.position, wave.position, wave.radius))
+        #     ]
 
         for bullet in self.bullets:
-            bullet.move(self.box_width, self.box_height)
+            bullet.move()
+
+        self.bullets[:] = [bullet for bullet in self.bullets if bullet.strength > 0]
+
+        for move in moves:
+            move.player.move(move.direction)
 
         for player in self.players:
-            dir = player.construct_direction()
-            player.change_direction(dir)
+            player.timeouts()
 
-            bullet = player.shot(player.direction, self.ticks)
+        for shot in shots:
+            bullet = shot.player.shot(shot.direction, self.ticks)
             if bullet is not None:
                 self.bullets.append(bullet)
 
-            wave = player.wave(self.ticks)
-            if wave is not None:
-                self.waves.append(wave)
-
-            player.tick(self.box_width, self.box_height)
+        # for player in self.players:
+        #     wave = player.wave(self.ticks)
+        #     if wave is not None:
+        #         self.waves.append(wave)
+        #
+        #     player.tick(self.box_width, self.box_height)
 
         for bullet_index in range(len(self.bullets)-1, -1, -1):
             bullet = self.bullets[bullet_index]
             for player in self.players:
                 if bullet.player != player and player.invulnerability_timeout == 0:
-                    if circles_collide(bullet.position, player.position, bullet.radius, player.radius):
+                    if circles_collide(bullet.position, player.position,
+                                       self.config.BULLET_RADIUS, self.config.PLAYER_RADIUS):
                         bullet.player.score += 1
                         player.invulnerability()
-                        self.bullets.remove(bullet_index)
+                        self.bullets.pop(bullet_index)
                         break
 
         self.ticks += 1
+
+    def is_ended(self):
+        return self.ticks == self.config.MAX_TICKS
+
+    def get_player_by_id(self, player_id):
+        for player in self.players:
+            if player.id == player_id:
+                return player
+
+    def get_state(self):
+        return {
+            'ticks': self.ticks,
+            'players': [
+                {
+                    'id': player.id, 'position_x': player.position.x, 'position_y': player.position.y,
+                    'bullet_count': player.bullet_count, 'bullet_reload_timeout': player.bullet_reload_timeout,
+                    'invulnerability_timeout': player.invulnerability_timeout,
+                    'shot_timeout': player.shot_timeout, 'score': player.score
+                }
+                for player in self.players
+            ],
+            'bullets': [
+                {
+                    'player_id': bullet.player.id, 'position_x': bullet.position.x, 'position_y': bullet.position.y,
+                    'velocity_x': bullet.velocity.x, 'velocity_y': bullet.velocity.y, 'strength': bullet.strength
+                }
+                for bullet in self.bullets
+            ]
+        }
