@@ -17,6 +17,7 @@ class Player:
         self.bullet_count = self.config.MAX_BULLETS
         self.invulnerability_timeout = 0
         self.shot_timeout = 0
+        self.blink_timeout = 0
 
     def move(self, direction: Vec):
         self.position = self.position + direction * self.config.PLAYER_SPEED
@@ -29,6 +30,9 @@ class Player:
         if self.shot_timeout > 0:
             self.shot_timeout -= 1
 
+        if self.blink_timeout > 0:
+            self.blink_timeout -= 1
+
         if self.invulnerability_timeout > 0:
             self.invulnerability_timeout -= 1
 
@@ -40,16 +44,23 @@ class Player:
                 self.bullet_reload_timeout = self.config.BULLET_RELOAD_TIMEOUT
 
     def shot(self, direction: Vec, tick: int):
-        if self.bullet_count > 0 and not direction.is_zero() and self.try_to_set_action_timeout():
+        if (self.bullet_count > 0
+                and self.shot_timeout == 0
+                and self.invulnerability_timeout == 0
+                and not direction.is_zero()):
             self.bullet_count -= 1
+            self.shot_timeout = self.config.SHOT_TIMEOUT
             return Bullet(self, self.position, direction, tick, self.config)
 
-    def try_to_set_action_timeout(self):
-        if self.shot_timeout > 0 or self.invulnerability_timeout > 0:
-            return False
+    def blink(self, direction: Vec):
+        if (self.blink_timeout == 0
+                and self.invulnerability_timeout == 0
+                and not direction.is_zero()):
+            self.position = self.position + Vec.unit(direction) * self.config.BLINK_RADIUS
+            self.position.x = max(0.0, min(self.position.x, self.config.BOX_WIDTH))
+            self.position.y = max(0.0, min(self.position.y, self.config.BOX_HEIGHT))
 
-        self.shot_timeout = self.config.SHOT_TIMEOUT
-        return True
+            self.blink_timeout = self.config.BLINK_TIMEOUT
 
     def invulnerability(self):
         if self.invulnerability_timeout == 0:
@@ -120,12 +131,15 @@ class Game:
     def tick(self, players_commands):
         moves = []
         shots = []
+        blinks = []
         for client_id, command in players_commands.items():
-            move, shot = command
+            move, shot, blink = command
             if move is not None:
                 moves.append(move)
             if shot is not None:
                 shots.append(shot)
+            if blink is not None:
+                blinks.append(blink)
 
         # for wave_index in range(len(self.waves), -1, -1):
         #     wave = self.waves[wave_index]
@@ -147,6 +161,9 @@ class Game:
             bullet.move()
 
         self.bullets[:] = [bullet for bullet in self.bullets if bullet.strength > 0]
+
+        for blink in blinks:
+            blink.player.blink(blink.direction)
 
         for move in moves:
             move.player.move(move.direction)
@@ -195,6 +212,7 @@ class Game:
                     'id': player.id, 'position_x': player.position.x, 'position_y': player.position.y,
                     'bullet_count': player.bullet_count, 'bullet_reload_timeout': player.bullet_reload_timeout,
                     'invulnerability_timeout': player.invulnerability_timeout,
+                    'blink_timeout': player.blink_timeout,
                     'shot_timeout': player.shot_timeout, 'score': player.score
                 }
                 for player in self.players

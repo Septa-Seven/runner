@@ -61,7 +61,7 @@ def run_server(game, args):
 
 
 def run_local(game, args):
-    if len(args.strategies) != len(game.config.PLAYERS):
+    if len(args.strategies) != game.config.PLAYERS:
         sys.exit(1)
 
     loop = asyncio.get_event_loop()

@@ -15,6 +15,7 @@ class GameWindow(pyglet.window.Window):
     KEY_UP = key.W
     KEY_DOWN = key.S
     KEY_SHOT = pyglet.window.mouse.LEFT
+    KEY_BLINK = pyglet.window.mouse.RIGHT
 
     PLAYER_COLORS = {
         0: (10, 200, 32),
@@ -32,10 +33,13 @@ class GameWindow(pyglet.window.Window):
         self.key_handler = key.KeyStateHandler()
         self.push_handlers(self.key_handler)
         self.shot_direction = None
+        self.blink_direction = None
 
     def on_mouse_press(self, x, y, button, modifiers):
         if button == self.KEY_SHOT:
             self.shot_direction = (x, y)
+        if button == self.KEY_BLINK:
+            self.blink_direction = (x, y)
 
     def get_move_direction(self):
         x = 0
@@ -64,6 +68,15 @@ class GameWindow(pyglet.window.Window):
             self.shot_direction = None
             return data
 
+    def get_blink_direction(self, x, y):
+        if self.blink_direction is not None:
+            data = {
+                'direction_x': self.blink_direction[0] - x,
+                'direction_y': self.blink_direction[1] - y
+            }
+            self.blink_direction = None
+            return data
+
     def tick(self, dt):
         self.state = get_message()
 
@@ -77,12 +90,15 @@ class GameWindow(pyglet.window.Window):
 
         move = self.get_move_direction()
         shot = self.get_shot_direction(x, y)
+        blink = self.get_blink_direction(x, y)
 
         command = {}
         if move:
             command['move'] = move
         if shot:
             command['shot'] = shot
+        if blink:
+            command['blink'] = blink
 
         print(json.dumps(command), flush=True)
 
@@ -106,11 +122,20 @@ class GameWindow(pyglet.window.Window):
                                       y=self.game_config['BOX_HEIGHT'] - 32 * (2 + player['id']),
                                       anchor_x='right', anchor_y='center', color=color + (255,))
 
-            arc = pyglet.shapes.Rectangle(player['position_x'] + 16, player['position_y'] + 16, 10,
+            bullets_count = pyglet.shapes.Rectangle(player['position_x'] + 10, player['position_y'] + 10, 10,
                                           player['bullet_count']/self.game_config['MAX_BULLETS']*10,
                                           color=(100, 100, 100))
 
-            arc.draw()
+            blink_radius = pyglet.shapes.Circle(player['position_x'], player['position_y'],
+                                             radius=self.game_config['BLINK_RADIUS'], color=color)
+
+            if player['blink_timeout'] > 0:
+                blink_radius.opacity = 5
+            else:
+                blink_radius.opacity = 20
+
+            blink_radius.draw()
+            bullets_count.draw()
             circle.draw()
             label.draw()
 

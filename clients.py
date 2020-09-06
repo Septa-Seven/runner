@@ -31,7 +31,11 @@ class ProcessClient(Client):
         return json.loads(command)
 
     def disconnect(self):
-        self.process.kill()
+        # there are cases when process terminates before server command to disconnect
+        try:
+            self.process.terminate()
+        except ProcessLookupError:
+            pass
 
 
 class TCPClient(Client):
