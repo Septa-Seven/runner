@@ -1,6 +1,7 @@
 import asyncio
 import json
 
+from game import Game
 from parsing import parse_command
 
 RESPONSE_TIMEOUT = 2.0
@@ -9,7 +10,7 @@ MAX_TICKS = 100
 
 
 class GameLoop:
-    def __init__(self, game, clients):
+    def __init__(self, game: Game, clients):
         self.game = game
         self.clients = dict(enumerate(clients))
 
@@ -43,6 +44,8 @@ class GameLoop:
                     client_actions[client_id] = actions
 
             self.game.tick(client_actions)
+            for client_id in set(self.clients.keys()) - set(player.id for player in self.game.players):
+                self.disconnect_client(client_id)
 
         # self.game.save_log('result.json')
 
@@ -68,7 +71,7 @@ class GameLoop:
         # send message but if it fails disconnect client
         try:
             await asyncio.wait_for(self.clients[client_id].send_message(msg), timeout=RESPONSE_TIMEOUT)
-        except:
+        except Exception as e:
             self.disconnect_client(client_id)
 
     async def send_messages(self, send_fs):

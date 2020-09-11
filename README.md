@@ -21,16 +21,16 @@
 
 ### GUI стратегия
 
-**startegies/gui_strategy.py** запускает стратегию,
-которая включает визуализацию игры и позволяет в реальном времени управлять
-игроком с помощью клавиатуры и мыши.
+**startegies/gui_strategy.py** - это стратегия, предназначенная для 
+тестирования игры и других стратегий. Визуализирует игру и позволяет в реальном
+времени управлять игроком с помощью клавиатуры и мыши.
 
 ### Пример
 
 Запуск сервера:
 
-`python runner.py server --config config.json --host 128.125.233.43 --port 1200` 
+`python runner.py server --config config.json --host localhost --port 1200`
 
 Подключиться к серверу и управлять игроком с помощью GUI стратегии:
 
-`python tcp_client.py --host 128.125.233.43 --port 1200 --startegy "python /home/runner/strategies/gui_strategy.py"`
+`python tcp_client.py --host localhost --port 1200 --startegy "python /home/runner/strategies/gui_strategy.py"`

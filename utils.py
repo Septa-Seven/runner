@@ -50,6 +50,9 @@ class Vec:
     def __mul__(self, other: float):
         return Vec(self.x * other, self.y * other)
 
+    def __truediv__(self, other: float):
+        return Vec(self.x / other, self.y / other)
+
     def __rmul__(self, other):
         return self.__mul__(other)
 

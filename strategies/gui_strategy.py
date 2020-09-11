@@ -28,16 +28,19 @@ class GameWindow(pyglet.window.Window):
         self.game_config = get_message()
         super().__init__(self.game_config['BOX_WIDTH'], self.game_config['BOX_HEIGHT'])
 
+        self.tile_width = self.game_config['BOX_WIDTH'] / self.game_config['TILES_HORIZONTAL_COUNT']
+        self.tile_height = self.game_config['BOX_HEIGHT'] / self.game_config['TILES_VERTICAL_COUNT']
+
         self.state = None
 
         self.key_handler = key.KeyStateHandler()
         self.push_handlers(self.key_handler)
-        self.shot_direction = None
+        self.shot_point = None
         self.blink_direction = None
 
     def on_mouse_press(self, x, y, button, modifiers):
         if button == self.KEY_SHOT:
-            self.shot_direction = (x, y)
+            self.shot_point = (x, y)
         if button == self.KEY_BLINK:
             self.blink_direction = (x, y)
 
@@ -59,13 +62,13 @@ class GameWindow(pyglet.window.Window):
                 'direction_y': y
             }
 
-    def get_shot_direction(self, x, y):
-        if self.shot_direction is not None:
+    def get_shot_point(self):
+        if self.shot_point is not None:
             data = {
-                'direction_x': self.shot_direction[0] - x,
-                'direction_y': self.shot_direction[1] - y
+                'point_x': self.shot_point[0],
+                'point_y': self.shot_point[1]
             }
-            self.shot_direction = None
+            self.shot_point = None
             return data
 
     def get_blink_direction(self, x, y):
@@ -89,16 +92,13 @@ class GameWindow(pyglet.window.Window):
             return
 
         move = self.get_move_direction()
-        shot = self.get_shot_direction(x, y)
-        blink = self.get_blink_direction(x, y)
+        shot = self.get_shot_point()
 
         command = {}
         if move:
             command['move'] = move
         if shot:
             command['shot'] = shot
-        if blink:
-            command['blink'] = blink
 
         print(json.dumps(command), flush=True)
 
@@ -107,61 +107,59 @@ class GameWindow(pyglet.window.Window):
             return
 
         self.clear()
+
+        batch = pyglet.graphics.Batch()
+        background_group = pyglet.graphics.OrderedGroup(0)
+        players_group = pyglet.graphics.OrderedGroup(1)
+        hud_group = pyglet.graphics.OrderedGroup(2)
+        figs = []
+        for y, row in enumerate(self.state['map']):
+            for x, tile in enumerate(row):
+                tile = int(tile * 255)
+                color = (100, 50, 20) if tile == 0.0 else (tile, tile, tile)
+                figs.append(pyglet.shapes.Rectangle(x*self.tile_width, y*self.tile_height, self.tile_width, self.tile_height,
+                                        color=color, batch=batch, group=background_group))
+
         for player in self.state['players']:
             color = self.PLAYER_COLORS[player['id']]
             circle = shapes.Circle(player['position_x'], player['position_y'],
-                                   self.game_config['PLAYER_RADIUS'], color=color)
-
+                                   self.game_config['PLAYER_RADIUS'], color=color,
+                                   group=players_group, batch=batch)
             if player['invulnerability_timeout'] > 0:
                 circle.opacity = 60
+
+            figs.append(circle)
 
             label = pyglet.text.Label(str(player['score']),
                                       font_name='Times New Roman',
                                       font_size=24,
                                       x=self.game_config['BOX_WIDTH'] - 32,
                                       y=self.game_config['BOX_HEIGHT'] - 32 * (2 + player['id']),
-                                      anchor_x='right', anchor_y='center', color=color + (255,))
-
+                                      anchor_x='right', anchor_y='center', color=color + (255,),
+                                      group=hud_group, batch=batch)
+            figs.append(label)
             bullets_count = pyglet.shapes.Rectangle(player['position_x'] + 10, player['position_y'] + 10, 10,
                                           player['bullet_count']/self.game_config['MAX_BULLETS']*10,
-                                          color=(100, 100, 100))
-
-            blink_radius = pyglet.shapes.Circle(player['position_x'], player['position_y'],
-                                             radius=self.game_config['BLINK_RADIUS'], color=color)
-
-            if player['blink_timeout'] > 0:
-                blink_radius.opacity = 5
-            else:
-                blink_radius.opacity = 20
-
-            blink_radius.draw()
-            bullets_count.draw()
-            circle.draw()
-            label.draw()
-
+                                          color=(100, 100, 100), batch=batch, group=hud_group)
+            figs.append(bullets_count)
         for bullet in self.state['bullets']:
             circle = shapes.Circle(bullet['position_x'], bullet['position_y'], self.game_config['BULLET_RADIUS'],
-                                   color=self.PLAYER_COLORS[bullet['player_id']])
-            circle.draw()
-
-        # for wave in self.game.waves:
-        #     color = 20 + 25 * wave.player.id
-        #     circle = shapes.Circle(wave.position.x, wave.position.y, wave.radius,
-        #                            color=(int(color/2), int((color**2 - 50) / 4), color))
-        #     circle.opacity = 100
-        #     circle.draw()
+                                   color=self.PLAYER_COLORS[bullet['player_id']], group=players_group, batch=batch)
+            figs.append(circle)
 
         tick_label = pyglet.text.Label(str(self.state['ticks']),
                                        font_name='Times New Roman',
                                        font_size=24,
                                        x=self.game_config['BOX_WIDTH'] - 32, y=self.game_config['BOX_HEIGHT'] - 32,
-                                       anchor_x='right', anchor_y='center', color=(20, 20, 50, 255))
-        tick_label.draw()
+                                       anchor_x='right', anchor_y='center', color=(20, 20, 50, 255), batch=batch,
+                                       group=hud_group)
+        figs.append(tick_label)
+        batch.draw()
 
 
 def main():
     game_window = GameWindow()
-    pyglet.gl.glClearColor(1,1,1,1)
+    pyglet.gl.glClearColor(0, 0, 0, 1)
     pyglet.clock.schedule_interval(game_window.tick, 1/60)
     pyglet.app.run()
 

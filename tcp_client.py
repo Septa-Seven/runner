@@ -39,20 +39,25 @@ class TCPClient:
         return msg
 
     def run(self):
-        # receive config
-        self.write_to_process(self.read_message())
-
-        # game loop
-        while True:
-            # receive state
+        # TODO start process after all the clients are connected
+        try:
+            # receive config
             self.write_to_process(self.read_message())
 
-            # send command
-            command = self.process.stdout.readline()
-            self.conn.send(command)
+            # game loop
+            while True:
+                # receive state
+                self.write_to_process(self.read_message())
+
+                # send command
+                command = self.process.stdout.readline()
+                self.conn.send(command)
+        except Exception as e:
+            import sys, traceback
+            traceback.print_exc(file=sys.stdout)
 
     def on_exit(self):
-        self.process.terminate()
+        self.process.kill()
         self.conn.close()
 
 

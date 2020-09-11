@@ -1,4 +1,4 @@
-from utils import Vec
+from utils import Vec, is_outside_box
 
 
 class InvalidAction(Exception):
@@ -13,7 +13,7 @@ def parse_command(game, player_id, command):
         move = None
 
     try:
-        shot = Direction(**command['shot'], game=game, player_id=player_id)
+        shot = Point(**command['shot'], game=game, player_id=player_id)
     except (KeyError, TypeError, InvalidAction):
         shot = None
 
@@ -37,3 +37,16 @@ class Direction(Action):
 
         self.direction = Vec(direction_x, direction_y)
         super().__init__(*args, **kwargs)
+
+
+class Point(Action):
+    def __init__(self, game, player_id, point_x, point_y):
+        if not isinstance(point_x, (int, float)) or not isinstance(point_y, (int, float)):
+            raise InvalidAction
+
+        super().__init__(game, player_id)
+
+        if is_outside_box(point_x, point_y, game.config.BOX_WIDTH, game.config.BOX_HEIGHT):
+            raise InvalidAction
+
+        self.point = Vec(point_x, point_y)
