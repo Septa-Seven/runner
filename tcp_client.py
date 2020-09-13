@@ -7,13 +7,11 @@ import atexit
 
 class TCPClient:
     def __init__(self, host, port, strategy):
-        # start strategy
-        self.process = subprocess.Popen(strategy, shell=True, stdin=subprocess.PIPE,
-                                        stdout=subprocess.PIPE)
-
         # connect to server
         self.conn = socket.create_connection((host, port))
         self.buffer = b''
+        self.strategy = strategy
+        self.process = None
 
         atexit.register(self.on_exit)
 
@@ -39,22 +37,22 @@ class TCPClient:
         return msg
 
     def run(self):
-        # TODO start process after all the clients are connected
-        try:
-            # receive config
+        # receive config
+        config = self.read_message()
+
+        # start strategy after all clients are connected and first message received
+        self.process = subprocess.Popen(self.strategy, shell=True, stdin=subprocess.PIPE,
+                                        stdout=subprocess.PIPE)
+        self.write_to_process(config)
+
+        # game loop
+        while True:
+            # receive state
             self.write_to_process(self.read_message())
 
-            # game loop
-            while True:
-                # receive state
-                self.write_to_process(self.read_message())
-
-                # send command
-                command = self.process.stdout.readline()
-                self.conn.send(command)
-        except Exception as e:
-            import sys, traceback
-            traceback.print_exc(file=sys.stdout)
+            # send command
+            command = self.process.stdout.readline()
+            self.conn.send(command)
 
     def on_exit(self):
         self.process.kill()

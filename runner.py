@@ -1,12 +1,12 @@
+import asyncio
+import json
+import signal
+
 import argparse
 from game import Game
 from game_loop import GameLoop
 from clients import ProcessClient, TCPClient
 from config import GameConfig
-
-import asyncio
-import json
-import sys
 
 
 async def get_process_clients(strategies):
@@ -33,6 +33,7 @@ class Server:
 
     async def run(self):
         self.server = await asyncio.start_server(self.on_connect, self.host, self.port)
+        signal.signal(signal.SIGINT, self.server.close)
 
         async with self.server:
             try:
@@ -41,7 +42,7 @@ class Server:
                 pass
 
     async def on_connect(self, reader, writer):
-        # TODO close server if some of clients disconnected
+        # TODO close server if client disconnected
         if len(self.clients) < self.game.config.PLAYERS:
             self.clients.append(TCPClient(reader, writer))
 
@@ -69,6 +70,8 @@ def run_local(game, args):
     clients = loop.run_until_complete(get_process_clients(args.strategies))
 
     game_loop = GameLoop(game, clients)
+    signal.signal(signal.SIGINT, game_loop.stop)
+
     loop.run_until_complete(game_loop.play())
 
 
@@ -93,7 +96,6 @@ def parsing():
 
 
 if __name__ == '__main__':
-    # TODO ctrl + C signal handler
     args = parsing()
 
     json_config = json.load(args.config)

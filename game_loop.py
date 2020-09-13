@@ -13,6 +13,10 @@ class GameLoop:
     def __init__(self, game: Game, clients):
         self.game = game
         self.clients = dict(enumerate(clients))
+        self.keep_work = True
+
+    def stop(self):
+        self.keep_work = False
 
     async def play(self):
         # send game config
@@ -26,7 +30,7 @@ class GameLoop:
         await self.send_messages(messages)
 
         # game
-        while not self.game.is_ended() and self.clients:
+        while not self.game.is_ended() and self.clients and self.keep_work:
             # send game state
             state = json.dumps(self.game.get_state())
             await self.send_messages([self.send_message_wrapper(client_id, state) for client_id in self.clients])
@@ -44,8 +48,6 @@ class GameLoop:
                     client_actions[client_id] = actions
 
             self.game.tick(client_actions)
-            for client_id in set(self.clients.keys()) - set(player.id for player in self.game.players):
-                self.disconnect_client(client_id)
 
         # self.game.save_log('result.json')
 

@@ -161,6 +161,7 @@ class Game:
             move.player.move(move.direction)
 
         # player tile damage and timeouts
+        teleport_players = set()
         for player_index in range(len(self.players)-1, -1, -1):
             player = self.players[player_index]
             player.timeouts()
@@ -169,10 +170,9 @@ class Game:
 
             self.map.decrease(tile_x, tile_y, self.config.TILE_DECREASE_PER_TICK)
             if self.map.is_void(tile_x, tile_y):
-                self.players.pop(player_index)
+                teleport_players.add(player)
 
         # move bullet and check player hit or target achievement
-        teleport_players = []
         for bullet_index in range(len(self.bullets)-1, -1, -1):
             bullet = self.bullets[bullet_index]
             bullet.move()
@@ -188,7 +188,7 @@ class Game:
                                           int(bullet.position.y / self.tile_height),
                                           self.config.BULLET_TILE_DAMAGE)
                         self.bullets.pop(bullet_index)
-                        teleport_players.append(player)
+                        teleport_players.add(player)
                         break
             else:
                 if bullet.is_reached_target():
@@ -202,6 +202,7 @@ class Game:
         for player in teleport_players:
             tile_x, tile_y = random.choice(top_tiles)
             player.position = Vec((0.5 + tile_x) * self.tile_width, (0.5 + tile_y) * self.tile_height)
+            player.score -= self.config.TELEPORT_PENALTY
 
         # for blink in blinks:
         #     blink.player.blink(blink.direction)
