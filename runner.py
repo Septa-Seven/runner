@@ -93,6 +93,7 @@ def parsing():
 
 
 if __name__ == '__main__':
+    # TODO ctrl + C signal handler
     args = parsing()
 
     json_config = json.load(args.config)

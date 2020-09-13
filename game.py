@@ -1,7 +1,7 @@
 import random
-
 from utils import circles_collide, point_in_circle, Vec, is_outside_box
 from config import GameConfig
+import random
 
 
 class Map:
@@ -9,12 +9,22 @@ class Map:
         self.tiles = [[1.0]*width for _ in range(height)]
 
     def decrease(self, x: int, y: int, value: float):
-        print('TILE DAMAGE', self.tiles[y][x], self.tiles[y][x] - value, value)
         self.tiles[y][x] = max(0.0, self.tiles[y][x] - value)
-        print('TILE RESULT', self.tiles[y][x])
 
     def is_void(self, x: int, y: int):
         return self.tiles[y][x] == 0.0
+
+    def top_tiles(self):
+        top_tiles = []
+        max_strength = 0.0
+        for y, row in enumerate(self.tiles):
+            for x, tile_strength in enumerate(row):
+                if max_strength < tile_strength:
+                    max_strength = tile_strength
+                    top_tiles = [(x, y)]
+                elif tile_strength == max_strength:
+                    top_tiles.append((x, y))
+        return top_tiles
 
 
 class Player:
@@ -146,22 +156,11 @@ class Game:
             # if blink is not None:
             #     blinks.append(blink)
 
-        for bullet_index in range(len(self.bullets)-1, -1, -1):
-            bullet = self.bullets[bullet_index]
-            if bullet.is_reached_target():
-                self.map.decrease(int(bullet.target.x / self.tile_width),
-                                  int(bullet.target.y / self.tile_height),
-                                  self.config.BULLET_TILE_DAMAGE)
-                self.bullets.pop(bullet_index)
-            else:
-                bullet.move()
-
-        # for blink in blinks:
-        #     blink.player.blink(blink.direction)
-
+        # move player
         for move in moves:
             move.player.move(move.direction)
 
+        # player tile damage and timeouts
         for player_index in range(len(self.players)-1, -1, -1):
             player = self.players[player_index]
             player.timeouts()
@@ -172,13 +171,12 @@ class Game:
             if self.map.is_void(tile_x, tile_y):
                 self.players.pop(player_index)
 
-        for shot in shots:
-            bullet = shot.player.shot(shot.point, self.ticks)
-            if bullet is not None:
-                self.bullets.append(bullet)
-
+        # move bullet and check player hit or target achievement
+        teleport_players = []
         for bullet_index in range(len(self.bullets)-1, -1, -1):
             bullet = self.bullets[bullet_index]
+            bullet.move()
+
             for player_index in range(len(self.players)-1, -1, -1):
                 player = self.players[player_index]
                 if bullet.player != player and player.invulnerability_timeout == 0:
@@ -186,11 +184,32 @@ class Game:
                                        self.config.BULLET_RADIUS, self.config.PLAYER_RADIUS):
                         bullet.player.score += 1
                         # self.players.pop(player_index)
-                        self.map.decrease(int(bullet.position.x // self.tile_width),
-                                          int(bullet.position.y // self.tile_height),
+                        self.map.decrease(int(bullet.position.x / self.tile_width),
+                                          int(bullet.position.y / self.tile_height),
                                           self.config.BULLET_TILE_DAMAGE)
                         self.bullets.pop(bullet_index)
+                        teleport_players.append(player)
                         break
+            else:
+                if bullet.is_reached_target():
+                    self.map.decrease(int(bullet.target.x / self.tile_width),
+                                      int(bullet.target.y / self.tile_height),
+                                      self.config.BULLET_TILE_DAMAGE)
+                    self.bullets.pop(bullet_index)
+
+        # all tile damage was done so we can teleport players who were hit by bullet
+        top_tiles = self.map.top_tiles()
+        for player in teleport_players:
+            tile_x, tile_y = random.choice(top_tiles)
+            player.position = Vec((0.5 + tile_x) * self.tile_width, (0.5 + tile_y) * self.tile_height)
+
+        # for blink in blinks:
+        #     blink.player.blink(blink.direction)
+
+        for shot in shots:
+            bullet = shot.player.shot(shot.point, self.ticks)
+            if bullet is not None:
+                self.bullets.append(bullet)
 
         self.ticks += 1
 

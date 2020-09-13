@@ -9,6 +9,11 @@ def get_message():
     return json.loads(input())
 
 
+def draw_rect(x, y, width, height):
+    pyglet.graphics.draw(4, pyglet.gl.GL_QUADS,
+        ('v2f', [x, y, x + width, y, x + width, y + height, x, y + height]))
+
+
 class GameWindow(pyglet.window.Window):
     KEY_LEFT = key.A
     KEY_RIGHT = key.D
@@ -18,8 +23,8 @@ class GameWindow(pyglet.window.Window):
     KEY_BLINK = pyglet.window.mouse.RIGHT
 
     PLAYER_COLORS = {
-        0: (10, 200, 32),
-        1: (10, 200, 200),
+        0: (123, 100, 140),
+        1: (150, 195, 10),
         2: (234, 23, 12),
         3: (123, 245, 32)
     }
@@ -30,6 +35,8 @@ class GameWindow(pyglet.window.Window):
 
         self.tile_width = self.game_config['BOX_WIDTH'] / self.game_config['TILES_HORIZONTAL_COUNT']
         self.tile_height = self.game_config['BOX_HEIGHT'] / self.game_config['TILES_VERTICAL_COUNT']
+        self.teleport_width = self.tile_width/8
+        self.teleport_height = self.tile_height/8
 
         self.state = None
 
@@ -113,12 +120,28 @@ class GameWindow(pyglet.window.Window):
         players_group = pyglet.graphics.OrderedGroup(1)
         hud_group = pyglet.graphics.OrderedGroup(2)
         figs = []
+
+        top_tiles = []
+        max_tile_strength = 0.0
         for y, row in enumerate(self.state['map']):
-            for x, tile in enumerate(row):
-                tile = int(tile * 255)
-                color = (100, 50, 20) if tile == 0.0 else (tile, tile, tile)
-                figs.append(pyglet.shapes.Rectangle(x*self.tile_width, y*self.tile_height, self.tile_width, self.tile_height,
-                                        color=color, batch=batch, group=background_group))
+            for x, tile_strength in enumerate(row):
+                # get top tiles
+                if max_tile_strength < tile_strength:
+                    top_tiles = [(x, y)]
+                    max_tile_strength = tile_strength
+                elif max_tile_strength == tile_strength:
+                    top_tiles.append((x, y))
+
+                tile_strength = int(tile_strength * 255)
+                color = (100, 50, 20) if tile_strength == 0.0 else (tile_strength, tile_strength, tile_strength)
+                figs.append(pyglet.shapes.Rectangle(x*self.tile_width, y*self.tile_height,
+                                                    self.tile_width, self.tile_height,
+                                                    color=color, batch=batch, group=background_group))
+        for tile_x, tile_y in top_tiles:
+            figs.append(pyglet.shapes.Rectangle((0.5 + tile_x) * self.tile_width - self.teleport_width/2,
+                                                (0.5 + tile_y) * self.tile_height - self.teleport_width/2,
+                                                self.teleport_width, self.teleport_height, color=(40, 70, 120),
+                                                batch=batch, group=background_group))
 
         for player in self.state['players']:
             color = self.PLAYER_COLORS[player['id']]
