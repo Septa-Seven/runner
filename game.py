@@ -1,4 +1,3 @@
-import random
 from utils import circles_collide, point_in_circle, Vec, is_outside_box
 from config import GameConfig
 import random
@@ -25,6 +24,12 @@ class Map:
                 elif tile_strength == max_strength:
                     top_tiles.append((x, y))
         return top_tiles
+
+    def unbroken_tiles(self):
+        return [(x, y)
+                for y, row in enumerate(self.tiles)
+                for x, tile_strength in enumerate(row)
+                if tile_strength != 0.0]
 
 
 class Player:
@@ -103,28 +108,12 @@ class Bullet:
 
     def is_reached_target(self):
         return Vec.distance(self.position, self.target) <= self.config.BULLET_SPEED
-        # get normal
-        # if self.position.x < 0:
-        #     x = 1
-        # elif self.position.x > self.config.BOX_WIDTH:
-        #     x = -1
-        # else:
-        #     x = 0
-        #
-        # if self.position.y < 0:
-        #     y = 1
-        # elif self.position.y > self.config.BOX_HEIGHT:
-        #     y = -1
-        # else:
-        #     y = 0
-        #
-        # # reflect
-        # if x != 0 or y != 0:
-        #     self.strength -= 1
-        #     self.velocity = Vec.reflect(self.velocity, Vec(x, y))
-        #
-        # self.position.x = max(0.0, min(self.position.x, self.config.BOX_WIDTH - 1))
-        # self.position.y = max(0.0, min(self.position.y, self.config.BOX_HEIGHT - 1))
+
+
+class Coin:
+    def __init__(self, position: Vec):
+        self.position = position
+        self.radius = 10.0
 
 
 class Game:
@@ -140,25 +129,39 @@ class Game:
         ]
 
         self.bullets = []
-        self.waves = []
+        self.coin = self.create_coin()
+
         self.ticks = 0
 
     def tick(self, players_commands):
         moves = []
         shots = []
-        # blinks = []
+        dashes = []
         for client_id, command in players_commands.items():
-            move, shot, blink = command
+            move, shot, dash = command
             if move is not None:
                 moves.append(move)
             if shot is not None:
                 shots.append(shot)
-            # if blink is not None:
-            #     blinks.append(blink)
+            if dash is not None:
+                dashes.append(dash)
 
         # move player
         for move in moves:
             move.player.move(move.direction)
+
+        # dashes
+        # for dash in dashes:
+        #     dash.player.dash(dash.direction)
+
+        # coin
+        coin_picked = False
+        for player in self.players:
+            if circles_collide(player.position, self.coin.position,
+                               self.config.PLAYER_RADIUS, self.config.COIN_RADIUS):
+                player.score += self.config.COIN_SCORE
+                coin_picked = True
+                break
 
         # player tile damage and timeouts
         teleport_players = set()
@@ -183,7 +186,6 @@ class Game:
                     if circles_collide(bullet.position, player.position,
                                        self.config.BULLET_RADIUS, self.config.PLAYER_RADIUS):
                         bullet.player.score += 1
-                        # self.players.pop(player_index)
                         self.map.decrease(int(bullet.position.x / self.tile_width),
                                           int(bullet.position.y / self.tile_height),
                                           self.config.BULLET_TILE_DAMAGE)
@@ -204,8 +206,9 @@ class Game:
             player.position = Vec((0.5 + tile_x) * self.tile_width, (0.5 + tile_y) * self.tile_height)
             player.score -= self.config.TELEPORT_PENALTY
 
-        # for blink in blinks:
-        #     blink.player.blink(blink.direction)
+        if coin_picked or self.map.is_void(int(self.coin.position.x / self.tile_width),
+                                           int(self.coin.position.y / self.tile_height)):
+            self.coin = self.create_coin()
 
         for shot in shots:
             bullet = shot.player.shot(shot.point, self.ticks)
@@ -213,6 +216,17 @@ class Game:
                 self.bullets.append(bullet)
 
         self.ticks += 1
+
+    def create_coin(self):
+        free_tiles = set(self.map.unbroken_tiles())
+        free_tiles -= set(
+            (int(player.position.x / self.tile_width), int(player.position.y / self.tile_width))
+            for player in self.players
+        )
+        free_tiles = list(free_tiles)
+        x, y = random.choice(free_tiles)
+        coin = Coin(Vec((x + 0.5) * self.tile_width, (y + 0.5) * self.tile_height))
+        return coin
 
     def is_ended(self):
         return self.ticks == self.config.MAX_TICKS
@@ -242,5 +256,9 @@ class Game:
                     'velocity_x': bullet.velocity.x, 'velocity_y': bullet.velocity.y
                 }
                 for bullet in self.bullets
-            ]
+            ],
+            'coin': {
+                'position_x': self.coin.position.x,
+                'position_y': self.coin.position.y
+            }
         }

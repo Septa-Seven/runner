@@ -23,10 +23,10 @@ class GameWindow(pyglet.window.Window):
     KEY_BLINK = pyglet.window.mouse.RIGHT
 
     PLAYER_COLORS = {
-        0: (123, 100, 140),
-        1: (150, 195, 10),
-        2: (234, 23, 12),
-        3: (123, 245, 32)
+        0: (247, 35, 91),
+        1: (28, 235, 90),
+        2: (32, 227, 217),
+        3: (107, 64, 237)
     }
 
     def __init__(self):
@@ -133,15 +133,19 @@ class GameWindow(pyglet.window.Window):
                     top_tiles.append((x, y))
 
                 tile_strength = int(tile_strength * 255)
-                color = (100, 50, 20) if tile_strength == 0.0 else (tile_strength, tile_strength, tile_strength)
+                color = (158, 18, 0) if tile_strength == 0.0 else (tile_strength, tile_strength, tile_strength)
                 figs.append(pyglet.shapes.Rectangle(x*self.tile_width, y*self.tile_height,
                                                     self.tile_width, self.tile_height,
                                                     color=color, batch=batch, group=background_group))
         for tile_x, tile_y in top_tiles:
-            figs.append(pyglet.shapes.Rectangle((0.5 + tile_x) * self.tile_width - self.teleport_width/2,
-                                                (0.5 + tile_y) * self.tile_height - self.teleport_width/2,
+            figs.append(pyglet.shapes.Rectangle((0.1 + tile_x) * self.tile_width - self.teleport_width/2,
+                                                (0.1 + tile_y) * self.tile_height - self.teleport_width/2,
                                                 self.teleport_width, self.teleport_height, color=(40, 70, 120),
                                                 batch=batch, group=background_group))
+
+        figs.append(shapes.Circle(self.state['coin']['position_x'], self.state['coin']['position_y'],
+                                  self.game_config['COIN_RADIUS'], color=(252, 198, 3),
+                                  group=players_group, batch=batch))
 
         for player in self.state['players']:
             color = self.PLAYER_COLORS[player['id']]
