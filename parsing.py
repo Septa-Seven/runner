@@ -17,12 +17,7 @@ def parse_command(game, player_id, command):
     except (KeyError, TypeError, InvalidAction):
         shot = None
 
-    try:
-        blink = Direction(**command['blink'], game=game, player_id=player_id)
-    except (KeyError, TypeError, InvalidAction):
-        blink = None
-
-    return move, shot, blink
+    return move, shot
 
 
 class Action:

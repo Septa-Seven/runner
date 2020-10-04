@@ -3,35 +3,6 @@ from config import GameConfig
 import random
 
 
-class Map:
-    def __init__(self, width, height):
-        self.tiles = [[1.0]*width for _ in range(height)]
-
-    def decrease(self, x: int, y: int, value: float):
-        self.tiles[y][x] = max(0.0, self.tiles[y][x] - value)
-
-    def is_void(self, x: int, y: int):
-        return self.tiles[y][x] == 0.0
-
-    def top_tiles(self):
-        top_tiles = []
-        max_strength = 0.0
-        for y, row in enumerate(self.tiles):
-            for x, tile_strength in enumerate(row):
-                if max_strength < tile_strength:
-                    max_strength = tile_strength
-                    top_tiles = [(x, y)]
-                elif tile_strength == max_strength:
-                    top_tiles.append((x, y))
-        return top_tiles
-
-    def unbroken_tiles(self):
-        return [(x, y)
-                for y, row in enumerate(self.tiles)
-                for x, tile_strength in enumerate(row)
-                if tile_strength != 0.0]
-
-
 class Player:
     def __init__(self, id: int, position: Vec, config: GameConfig):
         self.config = config
@@ -106,22 +77,15 @@ class Bullet:
     def move(self):
         self.position = self.position + self.velocity
 
-    def is_reached_target(self):
-        return Vec.distance(self.position, self.target) <= self.config.BULLET_SPEED
 
-
-class Coin:
+class Crown:
     def __init__(self, position: Vec):
         self.position = position
-        self.radius = 10.0
+        self.player = None
 
 
 class Game:
     def __init__(self, config: GameConfig):
-        self.map = Map(config.TILES_HORIZONTAL_COUNT, config.TILES_VERTICAL_COUNT)
-        self.tile_width = config.BOX_WIDTH / config.TILES_HORIZONTAL_COUNT
-        self.tile_height = config.BOX_HEIGHT / config.TILES_VERTICAL_COUNT
-
         self.config = config
         self.players = [
             Player(player_id, Vec(random.randint(0, config.BOX_WIDTH), random.randint(0, config.BOX_HEIGHT)), config)
@@ -129,55 +93,52 @@ class Game:
         ]
 
         self.bullets = []
-        self.coin = self.create_coin()
+        self.crown = Crown(Vec(self.config.BOX_WIDTH/2, self.config.BOX_HEIGHT/2))
 
         self.ticks = 0
 
     def tick(self, players_commands):
         moves = []
         shots = []
-        dashes = []
         for client_id, command in players_commands.items():
-            move, shot, dash = command
+            move, shot = command
             if move is not None:
                 moves.append(move)
             if shot is not None:
                 shots.append(shot)
-            if dash is not None:
-                dashes.append(dash)
 
         # move player
         for move in moves:
             move.player.move(move.direction)
 
-        # dashes
-        # for dash in dashes:
-        #     dash.player.dash(dash.direction)
-
-        # coin
-        coin_picked = False
+        # player timeouts
         for player in self.players:
-            if circles_collide(player.position, self.coin.position,
-                               self.config.PLAYER_RADIUS, self.config.COIN_RADIUS):
-                player.score += self.config.COIN_SCORE
-                coin_picked = True
-                break
-
-        # player tile damage and timeouts
-        teleport_players = set()
-        for player_index in range(len(self.players)-1, -1, -1):
-            player = self.players[player_index]
             player.timeouts()
-            tile_x = int(player.position.x / self.tile_width)
-            tile_y = int(player.position.y / self.tile_height)
 
-            self.map.decrease(tile_x, tile_y, self.config.TILE_DECREASE_PER_TICK)
-            if self.map.is_void(tile_x, tile_y):
-                teleport_players.add(player)
+        # check crown collisions
+        if self.crown.player is None:
+            for player in self.players:
+                if circles_collide(player.position, self.crown.position,
+                                   self.config.PLAYER_RADIUS, self.config.CROWN_RADIUS):
+                    # crown can't be picked up when it collides with multiple players
+                    if self.crown.player is None:
+                        self.crown.player = player
+                    else:
+                        self.crown.player = None
+                        break
 
-        # move bullet and check player hit or target achievement
+        # crown score
+        if self.crown.player is not None:
+            self.crown.player.score += 1
+
+        # move or delete bullet and check player hit
         for bullet_index in range(len(self.bullets)-1, -1, -1):
             bullet = self.bullets[bullet_index]
+            if is_outside_box(bullet.position.x, bullet.position.y,
+                              self.config.BOX_WIDTH, self.config.BOX_HEIGHT):
+                del self.bullets[bullet_index]
+                continue
+
             bullet.move()
 
             for player_index in range(len(self.players)-1, -1, -1):
@@ -186,29 +147,17 @@ class Game:
                     if circles_collide(bullet.position, player.position,
                                        self.config.BULLET_RADIUS, self.config.PLAYER_RADIUS):
                         bullet.player.score += 1
-                        self.map.decrease(int(bullet.position.x / self.tile_width),
-                                          int(bullet.position.y / self.tile_height),
-                                          self.config.BULLET_TILE_DAMAGE)
-                        self.bullets.pop(bullet_index)
-                        teleport_players.add(player)
+
+                        # crown drop
+                        if self.crown.player == player:
+                            self.crown.position = self.crown.player.position
+                            self.crown.player = None
+
+                        player.position = Vec(random.randint(0, self.config.BOX_WIDTH),
+                                              random.randint(0, self.config.BOX_HEIGHT))
+
+                        del self.bullets[bullet_index]
                         break
-            else:
-                if bullet.is_reached_target():
-                    self.map.decrease(int(bullet.target.x / self.tile_width),
-                                      int(bullet.target.y / self.tile_height),
-                                      self.config.BULLET_TILE_DAMAGE)
-                    self.bullets.pop(bullet_index)
-
-        # all tile damage was done so we can teleport players who were hit by bullet
-        top_tiles = self.map.top_tiles()
-        for player in teleport_players:
-            tile_x, tile_y = random.choice(top_tiles)
-            player.position = Vec((0.5 + tile_x) * self.tile_width, (0.5 + tile_y) * self.tile_height)
-            player.score -= self.config.TELEPORT_PENALTY
-
-        if coin_picked or self.map.is_void(int(self.coin.position.x / self.tile_width),
-                                           int(self.coin.position.y / self.tile_height)):
-            self.coin = self.create_coin()
 
         for shot in shots:
             bullet = shot.player.shot(shot.point, self.ticks)
@@ -216,17 +165,6 @@ class Game:
                 self.bullets.append(bullet)
 
         self.ticks += 1
-
-    def create_coin(self):
-        free_tiles = set(self.map.unbroken_tiles())
-        free_tiles -= set(
-            (int(player.position.x / self.tile_width), int(player.position.y / self.tile_width))
-            for player in self.players
-        )
-        free_tiles = list(free_tiles)
-        x, y = random.choice(free_tiles)
-        coin = Coin(Vec((x + 0.5) * self.tile_width, (y + 0.5) * self.tile_height))
-        return coin
 
     def is_ended(self):
         return self.ticks == self.config.MAX_TICKS
@@ -239,13 +177,11 @@ class Game:
     def get_state(self):
         return {
             'ticks': self.ticks,
-            'map': self.map.tiles,
             'players': [
                 {
                     'id': player.id, 'position_x': player.position.x, 'position_y': player.position.y,
                     'bullet_count': player.bullet_count, 'bullet_reload_timeout': player.bullet_reload_timeout,
                     'invulnerability_timeout': player.invulnerability_timeout,
-                    'blink_timeout': player.dash_timeout,
                     'shot_timeout': player.shot_timeout, 'score': player.score
                 }
                 for player in self.players
@@ -257,8 +193,10 @@ class Game:
                 }
                 for bullet in self.bullets
             ],
-            'coin': {
-                'position_x': self.coin.position.x,
-                'position_y': self.coin.position.y
+            'crown': {
+                'player_id': None, 'position_x': self.crown.position.x, 'position_y': self.crown.position.y
+            } if self.crown.player is None else {
+                'player_id': self.crown.player.id, 'position_x': self.crown.player.position.x,
+                'position_y': self.crown.player.position.y
             }
         }
