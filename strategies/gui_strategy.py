@@ -26,7 +26,7 @@ class GameWindow(pyglet.window.Window):
 
     def __init__(self):
         self.game_config = get_message()
-        super().__init__(self.game_config['BOX_WIDTH'], self.game_config['BOX_HEIGHT'])
+        super().__init__(self.game_config['box_width'], self.game_config['box_height'])
 
         self.state = None
 
@@ -71,14 +71,6 @@ class GameWindow(pyglet.window.Window):
     def tick(self, dt):
         self.state = get_message()
 
-        for player in self.state['players']:
-            if player['id'] == self.game_config['my_id']:
-                x = player['position_x']
-                y = player['position_y']
-                break
-        else:
-            return
-
         move = self.get_move_direction()
         shot = self.get_shot_point()
 
@@ -102,43 +94,52 @@ class GameWindow(pyglet.window.Window):
         hud_group = pyglet.graphics.OrderedGroup(2)
         figs = []
 
+        for spawn in self.game_config['spawns']:
+            color = self.PLAYER_COLORS[spawn['player_id']]
+            circle = shapes.Circle(spawn['spawn_x'], spawn['spawn_y'],
+                                   self.game_config['player_radius'], color=color,
+                                   group=background_group, batch=batch)
+            circle.opacity = 60
+
+            figs.append(circle)
+
         for player in self.state['players']:
             color = self.PLAYER_COLORS[player['id']]
             circle = shapes.Circle(player['position_x'], player['position_y'],
-                                   self.game_config['PLAYER_RADIUS'], color=color,
+                                   self.game_config['player_radius'], color=color,
                                    group=players_group, batch=batch)
             if player['invulnerability_timeout'] > 0:
-                circle.opacity = 60
+                circle.opacity = 100
 
             figs.append(circle)
 
             label = pyglet.text.Label(str(player['score']),
                                       font_name='Times New Roman',
                                       font_size=24,
-                                      x=self.game_config['BOX_WIDTH'] - 32,
-                                      y=self.game_config['BOX_HEIGHT'] - 32 * (2 + player['id']),
+                                      x=self.game_config['box_width'] - 32,
+                                      y=self.game_config['box_height'] - 32 * (2 + player['id']),
                                       anchor_x='right', anchor_y='center', color=color + (255,),
                                       group=hud_group, batch=batch)
             figs.append(label)
             bullets_count = pyglet.shapes.Rectangle(player['position_x'] + 10, player['position_y'] + 10, 10,
-                                          player['bullet_count']/self.game_config['MAX_BULLETS']*10,
+                                          player['bullet_count']/self.game_config['max_bullets']*10,
                                           color=(100, 100, 100), batch=batch, group=hud_group)
             figs.append(bullets_count)
 
         for bullet in self.state['bullets']:
-            circle = shapes.Circle(bullet['position_x'], bullet['position_y'], self.game_config['BULLET_RADIUS'],
+            circle = shapes.Circle(bullet['position_x'], bullet['position_y'], self.game_config['bullet_radius'],
                                    color=self.PLAYER_COLORS[bullet['player_id']], group=players_group, batch=batch)
             figs.append(circle)
 
         circle = shapes.Circle(self.state['crown']['position_x'], self.state['crown']['position_y'],
-                               self.game_config['CROWN_RADIUS'], color=(252, 255, 56),
+                               self.game_config['crown_radius'], color=(255, 197, 23),
                                group=players_group, batch=batch)
         figs.append(circle)
 
         tick_label = pyglet.text.Label(str(self.state['ticks']),
                                        font_name='Times New Roman',
                                        font_size=24,
-                                       x=self.game_config['BOX_WIDTH'] - 32, y=self.game_config['BOX_HEIGHT'] - 32,
+                                       x=self.game_config['box_width'] - 32, y=self.game_config['box_height'] - 32,
                                        anchor_x='right', anchor_y='center', color=(20, 20, 50, 255), batch=batch,
                                        group=hud_group)
         figs.append(tick_label)

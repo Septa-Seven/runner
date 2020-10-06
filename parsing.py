@@ -41,7 +41,7 @@ class Point(Action):
 
         super().__init__(game, player_id)
 
-        if is_outside_box(point_x, point_y, game.config.BOX_WIDTH, game.config.BOX_HEIGHT):
+        if is_outside_box(point_x, point_y, game.config.box_width, game.config.box_height):
             raise InvalidAction
 
         self.point = Vec(point_x, point_y)

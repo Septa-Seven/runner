@@ -73,7 +73,7 @@ class GameLoop:
         # send message but if it fails disconnect client
         try:
             await asyncio.wait_for(self.clients[client_id].send_message(msg), timeout=RESPONSE_TIMEOUT)
-        except Exception as e:
+        except Exception:
             self.disconnect_client(client_id)
 
     async def send_messages(self, send_fs):
