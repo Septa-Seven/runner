@@ -2,6 +2,7 @@ import asyncio
 import json
 
 from game import Game
+from config import global_config
 from parsing import parse_command
 
 RESPONSE_TIMEOUT = 2.0
@@ -20,7 +21,7 @@ class GameLoop:
 
     async def play(self):
         # send game config
-        config_json = self.game.config.json()
+        config_json = global_config.json()
 
         messages = []
         for client_id in self.clients:

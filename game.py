@@ -1,28 +1,26 @@
-from utils import circles_collide, point_in_circle, Vec, is_outside_box
-from config import GameConfig
+from utils import circles_collide, Vec, is_outside_box
+from config import global_config
 
 
 # TODO rename constants
 class Player:
-    def __init__(self, id: int, position: Vec, config: GameConfig):
-        self.config = config
-
+    def __init__(self, id: int, position: Vec):
         self.id = id
         self.position = position
         self.spawn = position
         self.score = 0
 
-        self.bullet_reload_timeout = self.config.bullet_reload_timeout
-        self.bullet_count = self.config.max_bullets
+        self.bullet_reload_timeout = global_config.bullet_reload_timeout
+        self.bullet_count = global_config.max_bullets
         self.invulnerability_timeout = 0
         self.shot_timeout = 0
 
     def move(self, direction: Vec):
-        self.position = self.position + direction * self.config.player_speed
+        self.position = self.position + direction * global_config.player_speed
 
         # player can't move outside the box
-        self.position.x = max(0.0, min(self.position.x, self.config.box_width - 1))
-        self.position.y = max(0.0, min(self.position.y, self.config.box_height - 1))
+        self.position.x = max(0.0, min(self.position.x, global_config.box_width))
+        self.position.y = max(0.0, min(self.position.y, global_config.box_height))
 
     def timeouts(self):
         if self.shot_timeout > 0:
@@ -31,33 +29,31 @@ class Player:
         if self.invulnerability_timeout > 0:
             self.invulnerability_timeout -= 1
 
-        if self.bullet_count < self.config.max_bullets:
+        if self.bullet_count < global_config.max_bullets:
             self.bullet_reload_timeout -= 1
 
             if self.bullet_reload_timeout == 0:
                 self.bullet_count += 1
-                self.bullet_reload_timeout = self.config.bullet_reload_timeout
+                self.bullet_reload_timeout = global_config.bullet_reload_timeout
 
     def shot(self, target: Vec, tick: int):
         if (self.bullet_count > 0
                 and self.shot_timeout == 0
                 and self.invulnerability_timeout == 0):
             self.bullet_count -= 1
-            self.shot_timeout = self.config.shot_timeout
-            return Bullet(self, self.position, target, tick, self.config)
+            self.shot_timeout = global_config.shot_timeout
+            return Bullet(self, self.position, target, tick)
 
-    def to_spawn(self):
+    def respawn(self):
         self.position = self.spawn
-        self.invulnerability_timeout = self.config.invulnerability_timeout
+        self.invulnerability_timeout = global_config.invulnerability_timeout
 
 
 class Bullet:
-    def __init__(self, player: Player, position: Vec, target: Vec, created_at: int, config: GameConfig):
-        self.config = config
+    def __init__(self, player: Player, position: Vec, target: Vec, created_at: int):
         self.player = player
         self.position = position
-        self.velocity = Vec.unit(target - position) * self.config.bullet_speed
-        self.target = target
+        self.velocity = Vec.unit(target - position) * global_config.bullet_speed
         self.created_at = created_at
 
     def move(self):
@@ -73,17 +69,20 @@ class Crown:
         if self.player is not None:
             self.player.score += 1
 
+    def drop(self):
+        self.position = self.player.position
+        self.player = None
+
 
 class Game:
-    def __init__(self, config: GameConfig):
-        self.config = config
+    def __init__(self):
         self.players = [
-            Player(spawn['player_id'], Vec(spawn['spawn_x'], spawn['spawn_y']), config)
-            for spawn in config.spawns
+            Player(spawn['player_id'], Vec(spawn['spawn_x'], spawn['spawn_y']))
+            for spawn in global_config.spawns
         ]
 
         self.bullets = []
-        self.crown = Crown(Vec(self.config.box_width/2, self.config.box_height/2))
+        self.crown = Crown(Vec(global_config.box_width/2, global_config.box_height/2))
 
         self.ticks = 0
 
@@ -97,11 +96,9 @@ class Game:
             if shot is not None:
                 shots.append(shot)
 
-        # move player
-        for move in moves:
-            move.player.move(move.direction)
+        for move_action in moves:
+            move_action.player.move(move_action.direction)
 
-        # player timeouts
         for player in self.players:
             player.timeouts()
 
@@ -109,7 +106,7 @@ class Game:
         if self.crown.player is None:
             for player in self.players:
                 if circles_collide(player.position, self.crown.position,
-                                   self.config.player_radius, self.config.crown_radius):
+                                   global_config.player_radius, global_config.crown_radius):
                     # crown can't be picked up when it collides with multiple players
                     if self.crown.player is None:
                         self.crown.player = player
@@ -117,45 +114,42 @@ class Game:
                         self.crown.player = None
                         break
 
-        # crown score
         self.crown.tick()
 
-        # move or delete bullet and check player hit
         for bullet_index in range(len(self.bullets)-1, -1, -1):
             bullet = self.bullets[bullet_index]
             if is_outside_box(bullet.position.x, bullet.position.y,
-                              self.config.box_width, self.config.box_height):
+                              global_config.box_width, global_config.box_height):
                 del self.bullets[bullet_index]
                 continue
 
             bullet.move()
 
-            for player_index in range(len(self.players)-1, -1, -1):
-                player = self.players[player_index]
-                if bullet.player != player and player.invulnerability_timeout == 0:
-                    if circles_collide(bullet.position, player.position,
-                                       self.config.bullet_radius, self.config.player_radius):
-                        bullet.player.score += self.config.hit_score
+            for player in self.players:
+                if (bullet.player != player
+                        and player.invulnerability_timeout == 0
+                        and circles_collide(bullet.position, player.position,
+                                            global_config.bullet_radius, global_config.player_radius)):
 
-                        # crown drop
-                        if self.crown.player == player:
-                            self.crown.position = self.crown.player.position
-                            self.crown.player = None
+                    if self.crown.player == player:
+                        self.crown.drop()
 
-                        player.to_spawn()
+                    player.respawn()
 
-                        del self.bullets[bullet_index]
-                        break
+                    bullet.player.score += global_config.hit_score
+                    del self.bullets[bullet_index]
 
-        for shot in shots:
-            bullet = shot.player.shot(shot.point, self.ticks)
+                    break
+
+        for shot_action in shots:
+            bullet = shot_action.player.shot(shot_action.point, self.ticks)
             if bullet is not None:
                 self.bullets.append(bullet)
 
         self.ticks += 1
 
     def is_ended(self):
-        return self.ticks == self.config.max_ticks
+        return self.ticks == global_config.max_ticks
 
     def get_player_by_id(self, player_id):
         for player in self.players:

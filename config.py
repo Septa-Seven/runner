@@ -18,3 +18,12 @@ class GameConfig:
 
     def json(self):
         return {key: getattr(self, key, None) for key in self.__slots__}
+
+
+global_config = None
+
+
+def set_global_config(config: GameConfig):
+    global global_config
+    global_config = config
+

@@ -1,11 +1,16 @@
+from __future__ import annotations
+
+from typing import Tuple
+
 from utils import Vec, is_outside_box
+from game import Game
 
 
 class InvalidAction(Exception):
     pass
 
 
-def parse_command(game, player_id, command):
+def parse_command(game: Game, player_id: int, command: dict) -> Tuple[Direction, Point]:
     # print('COMMAND', command)
     try:
         move = Direction(**command['move'], game=game, player_id=player_id)

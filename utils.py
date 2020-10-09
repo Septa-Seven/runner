@@ -2,32 +2,15 @@ from __future__ import annotations
 import math
 
 
-def is_outside_box(x, y, width, height):
+def is_outside_box(x: float, y: float, width: float, height: float) -> bool:
     return x < 0 or x > width or y < 0 or y > height
 
 
-def line_and_circle_collide(start: Vec, end: Vec, center: Vec, r: float):
-    if start.x == end.x and start.y == end.y:
-        return False
-
-    start = start - center
-    end = end - center
-    l1 = abs(start)
-    l2 = abs(end)
-    if l1 < r or l2 < r:
-        return True
-
-    p1 = start.x * (end.x - start.x) + start.y * (end.y - start.y)
-    p2 = end.x * (end.x - start.x) + end.y * (end.y - start.y)
-
-    return (p1 >= 0 >= p2 or p1 <= 0 <= p2) and abs((end.x * start.y - start.x * end.y) / Vec.distance(start, end)) <= r
-
-
-def circles_collide(center1: Vec, center2: Vec, r1, r2):
+def circles_collide(center1: Vec, center2: Vec, r1: float, r2: float) -> bool:
     return Vec.distance(center1, center2) < r1 + r2
 
 
-def point_in_circle(p: Vec, c: Vec, r: float):
+def point_in_circle(p: Vec, c: Vec, r: float) -> bool:
     return Vec.distance(p, c) < r
 
 
@@ -38,29 +21,29 @@ class Vec:
         self.x = x
         self.y = y
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'{self.x}, {self.y}'
 
-    def __sub__(self, other: Vec):
+    def __sub__(self, other: Vec) -> Vec:
         return Vec(self.x - other.x, self.y - other.y)
 
-    def __add__(self, other: Vec):
+    def __add__(self, other: Vec) -> Vec:
         return Vec(self.x + other.x, self.y + other.y)
 
-    def __mul__(self, other: float):
+    def __mul__(self, other: float) -> Vec:
         return Vec(self.x * other, self.y * other)
 
-    def __truediv__(self, other: float):
+    def __truediv__(self, other: float) -> Vec:
         return Vec(self.x / other, self.y / other)
 
-    def __rmul__(self, other):
+    def __rmul__(self, other) -> Vec:
         return self.__mul__(other)
 
-    def __abs__(self):
+    def __abs__(self) -> float:
         return math.sqrt(self.x * self.x + self.y * self.y)
 
     @staticmethod
-    def unit(v):
+    def unit(v: Vec) -> Vec:
         m = max(abs(v.x), abs(v.y))
         if m == 0:
             return Vec(0.0, 0.0)
@@ -68,16 +51,8 @@ class Vec:
             return Vec(v.x/m, v.y/m)
 
     @staticmethod
-    def reflect(direction, normal):
-        return direction - 2.0 * normal * (Vec.scalar(direction, normal) / Vec.scalar(normal, normal))
-
-    @staticmethod
-    def distance(v1, v2):
+    def distance(v1: Vec, v2: Vec) -> float:
         return math.sqrt((v1.x - v2.x)**2 + (v1.y - v2.y)**2)
 
-    @staticmethod
-    def scalar(v1, v2):
-        return v1.x * v2.x + v1.y * v2.y
-
-    def is_zero(self):
+    def is_zero(self) -> bool:
         return self.x == 0.0 and self.y == 0.0
