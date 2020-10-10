@@ -2,7 +2,7 @@ import asyncio
 import json
 
 from game import Game
-from config import global_config
+import config
 from parsing import parse_command
 
 RESPONSE_TIMEOUT = 2.0
@@ -21,7 +21,7 @@ class GameLoop:
 
     async def play(self):
         # send game config
-        config_json = global_config.json()
+        config_json = config.global_config.json()
 
         messages = []
         for client_id in self.clients:
@@ -34,6 +34,7 @@ class GameLoop:
         while not self.game.is_ended() and self.clients and self.keep_work:
             # send game state
             state = json.dumps(self.game.get_state())
+            print(state)
             await self.send_messages([self.send_message_wrapper(client_id, state) for client_id in self.clients])
 
             commands = await self.get_commands()

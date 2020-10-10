@@ -2,35 +2,34 @@ from __future__ import annotations
 
 from typing import Tuple
 
-from utils import Vec, is_outside_box
+
+import config
 from game import Game
+from utils import Vec, is_outside_box
+from exceptions import InvalidAction
 
 
-class InvalidAction(Exception):
-    pass
-
-
-def parse_command(game: Game, player_id: int, command: dict) -> Tuple[Direction, Point]:
+def parse_command(game: Game, player_id: int, command: dict) -> Tuple[Move, Shot]:
     # print('COMMAND', command)
     try:
-        move = Direction(**command['move'], game=game, player_id=player_id)
+        move = Move(**command['move'], game=game, player_id=player_id)
     except (KeyError, TypeError, InvalidAction):
         move = None
 
     try:
-        shot = Point(**command['shot'], game=game, player_id=player_id)
+        shot = Shot(**command['shot'], game=game, player_id=player_id)
     except (KeyError, TypeError, InvalidAction):
         shot = None
 
     return move, shot
 
 
-class Action:
+class ActionInfo:
     def __init__(self, game, player_id):
         self.player = game.get_player_by_id(player_id)
 
 
-class Direction(Action):
+class Direction(ActionInfo):
     def __init__(self, direction_x, direction_y, *args, **kwargs):
         if not isinstance(direction_x, (int, float)) or not isinstance(direction_y, (int, float)):
             raise InvalidAction
@@ -39,14 +38,29 @@ class Direction(Action):
         super().__init__(*args, **kwargs)
 
 
-class Point(Action):
+class Point(ActionInfo):
     def __init__(self, game, player_id, point_x, point_y):
         if not isinstance(point_x, (int, float)) or not isinstance(point_y, (int, float)):
             raise InvalidAction
 
         super().__init__(game, player_id)
 
-        if is_outside_box(point_x, point_y, game.config.box_width, game.config.box_height):
+        if is_outside_box(point_x, point_y, config.global_config.box_width, config.global_config.box_height):
             raise InvalidAction
 
         self.point = Vec(point_x, point_y)
+
+
+class Action:
+    def apply(self, *args, **kwargs):
+        raise NotImplemented
+
+
+class Move(Direction, Action):
+    def apply(self):
+        self.player.move(self.direction)
+
+
+class Shot(Point, Action):
+    def apply(self, tick):
+        return self.player.shot(self.point, tick)

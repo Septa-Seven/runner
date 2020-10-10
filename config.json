@@ -1,17 +1,5 @@
 {
   "players": 2,
-  "spawns": [
-    {
-      "player_id": 0,
-      "spawn_x": 64,
-      "spawn_y": 64
-    },
-    {
-      "player_id": 1,
-      "spawn_x": 636,
-      "spawn_y": 636
-    }
-  ],
 
   "max_ticks": 2000000,
 
@@ -30,5 +18,7 @@
   "bullet_reload_timeout": 40,
   "invulnerability_timeout": 120,
 
-  "crown_radius": 6
+  "item_radius": 6,
+  "boots_speed_effect": 2,
+  "mask_hit_score_effect": 50
 }

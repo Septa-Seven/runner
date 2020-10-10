@@ -1,12 +1,15 @@
 class GameConfig:
     __slots__ = (
-        "players", "spawns", "max_ticks",
+        "players", "max_ticks",
         "box_width", "box_height",
-        "bullet_radius", "bullet_speed", "player_radius",
-        "player_speed", "max_bullets",
-        "shot_timeout", "bullet_reload_timeout",
-        "invulnerability_timeout", "crown_radius",
-        "hit_score"
+        "bullet_radius", "bullet_speed",
+        "player_radius", "player_speed",
+        "max_bullets",
+        "shot_timeout", "bullet_reload_timeout", "invulnerability_timeout",
+        "hit_score",
+        "item_radius",
+        "boots_speed_effect",
+        "mask_hit_score_effect"
     )
 
     def __init__(self, json_data):
@@ -26,4 +29,3 @@ global_config = None
 def set_global_config(config: GameConfig):
     global global_config
     global_config = config
-

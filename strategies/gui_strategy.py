@@ -1,4 +1,5 @@
 import json
+import math
 
 import pyglet
 from pyglet import shapes
@@ -22,6 +23,12 @@ class GameWindow(pyglet.window.Window):
         1: (28, 235, 90),
         2: (32, 227, 217),
         3: (107, 64, 237)
+    }
+
+    ITEM_COLORS = {
+        0: (255, 196, 33),
+        1: (42, 45, 46),
+        2: (181, 132, 53),
     }
 
     def __init__(self):
@@ -94,16 +101,9 @@ class GameWindow(pyglet.window.Window):
         hud_group = pyglet.graphics.OrderedGroup(2)
         figs = []
 
-        for spawn in self.game_config['spawns']:
-            color = self.PLAYER_COLORS[spawn['player_id']]
-            circle = shapes.Circle(spawn['spawn_x'], spawn['spawn_y'],
-                                   self.game_config['player_radius'], color=color,
-                                   group=background_group, batch=batch)
-            circle.opacity = 60
-
-            figs.append(circle)
-
+        player_map = {}
         for player in self.state['players']:
+            player_map[player['id']] = player
             color = self.PLAYER_COLORS[player['id']]
             circle = shapes.Circle(player['position_x'], player['position_y'],
                                    self.game_config['player_radius'], color=color,
@@ -126,15 +126,50 @@ class GameWindow(pyglet.window.Window):
                                           color=(100, 100, 100), batch=batch, group=hud_group)
             figs.append(bullets_count)
 
+        not_picked = []
+        player_items = {player_id: [] for player_id in range(self.game_config['players'])}
+        for item in self.state['items']:
+            if item['player_id'] is None:
+                not_picked.append(item)
+            else:
+                player_items[item['player_id']].append(item)
+
+            color = self.ITEM_COLORS[item['id']]
+
+            spawn = shapes.Rectangle(item['spawn_x'] - self.game_config['item_radius'], item['spawn_y'] - self.game_config['item_radius'],
+                                     self.game_config['item_radius'] * 2, self.game_config['item_radius'] * 2,
+                                     color=color, group=background_group, batch=batch)
+            spawn.opacity = 60
+            figs.append(spawn)
+
+        item_offsets = []
+        for ind in range(len(self.state['items'])):
+            x = math.cos(math.pi * self.state['ticks']/32 + 2 * math.pi / len(self.state['items']) * ind) * self.game_config['player_radius'] * 2
+            y = math.sin(math.pi * self.state['ticks']/32 + 2 * math.pi / len(self.state['items']) * ind) * self.game_config['player_radius'] * 2
+
+            item_offsets.append((x, y))
+
+        for player_id, items in player_items.items():
+            for ind, item in enumerate(items):
+                x = player_map[player_id]['position_x'] + item_offsets[ind][0]
+                y = player_map[player_id]['position_y'] + item_offsets[ind][1]
+                color = self.ITEM_COLORS[item['id']]
+                circle = shapes.Circle(x, y,
+                                       self.game_config['item_radius'], color=color,
+                                       group=background_group, batch=batch)
+                figs.append(circle)
+
+        for item in not_picked:
+            color = self.ITEM_COLORS[item['id']]
+            circle = shapes.Circle(item['spawn_x'], item['spawn_y'],
+                                   self.game_config['item_radius'], color=color,
+                                   group=players_group, batch=batch)
+            figs.append(circle)
+
         for bullet in self.state['bullets']:
             circle = shapes.Circle(bullet['position_x'], bullet['position_y'], self.game_config['bullet_radius'],
                                    color=self.PLAYER_COLORS[bullet['player_id']], group=players_group, batch=batch)
             figs.append(circle)
-
-        circle = shapes.Circle(self.state['crown']['position_x'], self.state['crown']['position_y'],
-                               self.game_config['crown_radius'], color=(255, 197, 23),
-                               group=players_group, batch=batch)
-        figs.append(circle)
 
         tick_label = pyglet.text.Label(str(self.state['ticks']),
                                        font_name='Times New Roman',

@@ -6,7 +6,8 @@ import argparse
 from game import Game
 from game_loop import GameLoop
 from clients import ProcessClient, TCPClient
-from config import set_global_config, GameConfig, global_config
+from config import set_global_config, GameConfig
+import config
 
 
 async def get_process_clients(strategies):
@@ -43,10 +44,10 @@ class Server:
 
     async def on_connect(self, reader, writer):
         # TODO close server if client disconnected
-        if len(self.clients) < global_config.players:
+        if len(self.clients) < config.global_config.players:
             self.clients.append(TCPClient(reader, writer))
 
-            if len(self.clients) == global_config.players:
+            if len(self.clients) == config.global_config.players:
                 game_loop = GameLoop(self.game, self.clients)
                 await game_loop.play()
 
@@ -63,7 +64,7 @@ def run_server(game: Game, args):
 
 
 def run_local(game: Game, args):
-    if len(args.strategies) != global_config.players:
+    if len(args.strategies) != config.global_config.players:
         return
 
     loop = asyncio.get_event_loop()
@@ -97,10 +98,9 @@ def parsing():
 
 if __name__ == '__main__':
     args = parsing()
-    game = Game()
+    set_global_config(GameConfig(json.load(args.config)))
 
-    json_config = json.load(args.config)
-    set_global_config(GameConfig(json_config))
+    game = Game()
 
     if args.mode == 'server':
         run_server(game, args)
