@@ -1,25 +1,30 @@
 from __future__ import annotations
 from utils import circles_collide, Vec, is_outside_box
 import config
-from items import Crown, Mask, Boots, Tickable
-import random
+from items import Item, Tickable
 from exceptions import ShotError
+from timer import Timer
 
 
 class Player:
     def __init__(self, id: int, position: Vec):
-        self.id = id
-        self.position = position
-        self.score = 0
-
         # modifiers
         self.speed = config.global_config.player_speed
         self.hit_score = config.global_config.hit_score
+        self.max_bullets = config.global_config.max_bullets
+        self.reload_timeout = config.global_config.reload_timeout
+        self.shot_timeout = config.global_config.shot_timeout
 
-        self.bullet_reload_timeout = config.global_config.bullet_reload_timeout
-        self.bullet_count = config.global_config.max_bullets
-        self.invulnerability_timeout = 0
-        self.shot_timeout = 0
+        self.id = id
+        self.position = position
+        self.score = 0
+        self.bullet_count = self.max_bullets
+
+        self.reload_timer = Timer()
+        self.reload_timer.set(self.reload_timeout)
+
+        self.invulnerability_timer = Timer()
+        self.shot_timer = Timer()
 
     def move(self, direction: Vec):
         self.position = self.position + direction * self.speed
@@ -29,27 +34,24 @@ class Player:
         self.position.y = max(0.0, min(self.position.y, config.global_config.box_height))
 
     def timeouts(self):
-        if self.shot_timeout > 0:
-            self.shot_timeout -= 1
+        self.shot_timer.tick()
+        self.invulnerability_timer.tick()
 
-        if self.invulnerability_timeout > 0:
-            self.invulnerability_timeout -= 1
+        if self.bullet_count < self.max_bullets:
+            self.reload_timer.tick()
 
-        if self.bullet_count < config.global_config.max_bullets:
-            self.bullet_reload_timeout -= 1
-
-            if self.bullet_reload_timeout == 0:
+            if self.reload_timer.ready():
                 self.bullet_count += 1
-                self.bullet_reload_timeout = config.global_config.bullet_reload_timeout
+                self.reload_timer.set(self.reload_timeout)
 
     def shot(self, target: Vec, tick: int) -> Bullet:
-        if (self.invulnerability_timeout > 0
-                or self.shot_timeout > 0
-                or self.bullet_count == 0):
+        if (self.bullet_count == 0
+                or not self.invulnerability_timer.ready()
+                or not self.shot_timer.ready()):
             raise ShotError
 
         self.bullet_count -= 1
-        self.shot_timeout = config.global_config.shot_timeout
+        self.shot_timer.set(self.shot_timeout)
         return Bullet(self, self.position, target, tick)
 
 
@@ -75,13 +77,12 @@ class Game:
         ]
 
         self.bullets = []
+        item_cls_mapping = Item.mapping()
         self.items = [
-            Mask(Vec(random.randint(0, config.global_config.box_width),
-                     random.randint(0, config.global_config.box_height))),
-            Boots(Vec(random.randint(0, config.global_config.box_width),
-                      random.randint(0, config.global_config.box_height))),
-            Crown(Vec(random.randint(0, config.global_config.box_width),
-                      random.randint(0, config.global_config.box_height)))
+            item_cls_mapping[item['id']](
+                Vec(item['spawn_x'], item['spawn_y'])
+            )
+            for item in config.global_config.items
         ]
 
         self.ticks = 0
@@ -101,6 +102,7 @@ class Game:
     def tick(self, players_commands):
         moves = []
         shots = []
+        # TODO remove client_id
         for client_id, command in players_commands.items():
             move, shot = command
             if move is not None:
@@ -118,7 +120,7 @@ class Game:
         for item in self.items:
             if item.player is None:
                 for player in self.players:
-                    if (player.invulnerability_timeout == 0
+                    if (player.invulnerability_timer.ready()
                             and circles_collide(player.position, item.spawn,
                                                 config.global_config.player_radius,
                                                 config.global_config.item_radius)):
@@ -145,7 +147,7 @@ class Game:
 
             for player in self.players:
                 if (bullet.player != player
-                        and player.invulnerability_timeout == 0
+                        and player.invulnerability_timer.ready()
                         and circles_collide(bullet.position, player.position,
                                             config.global_config.bullet_radius,
                                             config.global_config.player_radius)):
@@ -154,7 +156,7 @@ class Game:
                         if item.player == player:
                             item.drop()
 
-                    player.invulnerability_timeout = config.global_config.invulnerability_timeout
+                    player.invulnerability_timer.set(config.global_config.invulnerability_timeout)
 
                     bullet.player.score += bullet.player.hit_score
                     del self.bullets[bullet_index]
@@ -190,9 +192,9 @@ class Game:
                     'hit_score': player.hit_score,
                     'position_x': player.position.x, 'position_y': player.position.y,
                     'bullet_count': player.bullet_count,
-                    'bullet_reload_timeout': player.bullet_reload_timeout,
-                    'shot_timeout': player.shot_timeout,
-                    'invulnerability_timeout': player.invulnerability_timeout,
+                    'reload_timeout': player.reload_timer.ticks,
+                    'shot_timeout': player.shot_timer.ticks,
+                    'invulnerability_timeout': player.invulnerability_timer.ticks,
                 }
                 for player in self.players
             ],

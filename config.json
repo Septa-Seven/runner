@@ -1,5 +1,37 @@
 {
   "players": 2,
+  "items": [
+    {
+      "id": 0,
+      "spawn_x": 300,
+      "spawn_y": 400
+    },
+    {
+      "id": 1,
+      "spawn_x": 350,
+      "spawn_y": 400
+    },
+    {
+      "id": 2,
+      "spawn_x": 400,
+      "spawn_y": 400
+    },
+    {
+      "id": 3,
+      "spawn_x": 300,
+      "spawn_y": 300
+    },
+    {
+      "id": 4,
+      "spawn_x": 350,
+      "spawn_y": 300
+    },
+    {
+      "id": 5,
+      "spawn_x": 400,
+      "spawn_y": 300
+    }
+  ],
 
   "max_ticks": 2000000,
 
@@ -15,10 +47,13 @@
 
   "max_bullets": 3,
   "shot_timeout": 8,
-  "bullet_reload_timeout": 40,
+  "reload_timeout": 40,
   "invulnerability_timeout": 120,
 
   "item_radius": 6,
   "boots_speed_effect": 2,
-  "mask_hit_score_effect": 50
+  "mask_hit_score_effect": 50,
+  "pocket_max_bullets_effect": 2,
+  "dragon_shot_timeout_effect": 4,
+  "leaf_reload_timeout_effect": 10
 }

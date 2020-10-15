@@ -1,5 +1,4 @@
-import random
-from utils import Vec, is_outside_box
+from utils import Vec
 import config
 
 
@@ -13,6 +12,10 @@ class Item:
 
     def drop(self):
         self.player = None
+
+    @classmethod
+    def mapping(cls):
+        return {item_cls.id: item_cls for item_cls in cls.__subclasses__()}
 
 
 class Tickable:
@@ -49,4 +52,43 @@ class Boots(Item):
 
     def drop(self):
         self.player.speed -= config.global_config.boots_speed_effect
+        super().drop()
+
+
+class Pocket(Item):
+    id = 3
+
+    def pick(self, player):
+        super().pick(player)
+        self.player.max_bullets += config.global_config.pocket_max_bullets_effect
+
+    def drop(self):
+        self.player.max_bullets -= config.global_config.pocket_max_bullets_effect
+        if self.player.bullet_count > self.player.max_bullets:
+            self.player.bullet_count = self.player.max_bullets
+
+        super().drop()
+
+
+class Dragon(Item):
+    id = 4
+
+    def pick(self, player):
+        super().pick(player)
+        self.player.shot_timeout -= config.global_config.dragon_shot_timeout_effect
+
+    def drop(self):
+        self.player.shot_timeout += config.global_config.dragon_shot_timeout_effect
+        super().drop()
+
+
+class Leaf(Item):
+    id = 5
+
+    def pick(self, player):
+        super().pick(player)
+        self.player.reload_timeout -= config.global_config.leaf_reload_timeout_effect
+
+    def drop(self):
+        self.player.reload_timeout += config.global_config.leaf_reload_timeout_effect
         super().drop()

@@ -1,15 +1,19 @@
 class GameConfig:
     __slots__ = (
         "players", "max_ticks",
+        "items",
         "box_width", "box_height",
         "bullet_radius", "bullet_speed",
         "player_radius", "player_speed",
         "max_bullets",
-        "shot_timeout", "bullet_reload_timeout", "invulnerability_timeout",
+        "shot_timeout", "reload_timeout", "invulnerability_timeout",
         "hit_score",
         "item_radius",
         "boots_speed_effect",
-        "mask_hit_score_effect"
+        "mask_hit_score_effect",
+        "pocket_max_bullets_effect",
+        "dragon_shot_timeout_effect",
+        "leaf_reload_timeout_effect"
     )
 
     def __init__(self, json_data):

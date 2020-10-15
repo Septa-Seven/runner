@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Tuple
 
-
 import config
 from game import Game
 from utils import Vec, is_outside_box
