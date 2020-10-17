@@ -27,7 +27,7 @@ class Player:
         self.shot_timer = Timer()
 
     def move(self, direction: Vec):
-        self.position = self.position + direction * self.speed
+        self.position = self.position + Vec.unit(direction) * self.speed
 
         # player can't move outside the box
         self.position.x = max(0.0, min(self.position.x, config.global_config.box_width))
@@ -68,42 +68,24 @@ class Bullet:
 
 class Game:
     def __init__(self):
-        positions = self.spawn_positions(config.global_config.box_width,
-                                         config.global_config.box_height,
-                                         config.global_config.players)
         self.players = [
-            Player(player_id, position)
-            for player_id, position in enumerate(positions)
+            Player(player['id'], Vec(player['position_x'], player['position_y']))
+            for player in config.global_config.players
         ]
 
         self.bullets = []
         item_cls_mapping = Item.mapping()
         self.items = [
-            item_cls_mapping[item['id']](
-                Vec(item['spawn_x'], item['spawn_y'])
-            )
+            item_cls_mapping[item['id']](Vec(item['spawn_x'], item['spawn_y']))
             for item in config.global_config.items
         ]
 
         self.ticks = 0
 
-    @staticmethod
-    def spawn_positions(width, height, players):
-        positions = [Vec(32.0, 32.0)]
-        if players > 1:
-            positions.append(Vec(width - 32, height - 32))
-        if players > 2:
-            positions.append(Vec(32, height - 32))
-        if players > 3:
-            positions.append(Vec(width - 32, 32))
-
-        return positions
-
-    def tick(self, players_commands):
+    def tick(self, commands):
         moves = []
         shots = []
-        # TODO remove client_id
-        for client_id, command in players_commands.items():
+        for command in commands:
             move, shot = command
             if move is not None:
                 moves.append(move)

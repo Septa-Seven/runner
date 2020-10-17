@@ -34,22 +34,21 @@ class GameLoop:
         while not self.game.is_ended() and self.clients and self.keep_work:
             # send game state
             state = json.dumps(self.game.get_state())
-            print(state)
             await self.send_messages([self.send_message_wrapper(client_id, state) for client_id in self.clients])
 
             commands = await self.get_commands()
 
-            client_actions = {}
+            parsed_commands = []
             for client_id, command in commands:
                 if command is None:
                     continue
 
-                actions = parse_command(self.game, client_id, command)
+                parsed_command = parse_command(self.game, client_id, command)
 
-                if actions:
-                    client_actions[client_id] = actions
+                if parsed_command:
+                    parsed_commands.append(parsed_command)
 
-            self.game.tick(client_actions)
+            self.game.tick(parsed_commands)
 
         # self.game.save_log('result.json')
 

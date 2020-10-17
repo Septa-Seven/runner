@@ -1,5 +1,16 @@
 {
-  "players": 2,
+  "players": [
+    {
+      "id": 0,
+      "position_x": 64,
+      "position_y": 350
+    },
+    {
+      "id": 1,
+      "position_x": 350,
+      "position_y": 64
+    }
+  ],
   "items": [
     {
       "id": 0,
@@ -38,20 +49,20 @@
   "box_width": 700,
   "box_height": 700,
 
-  "bullet_radius": 5,
+  "bullet_radius": 4,
   "bullet_speed": 10,
   "hit_score": 50,
 
-  "player_radius": 10,
-  "player_speed": 3,
+  "player_radius": 6,
+  "player_speed": 2,
 
   "max_bullets": 3,
   "shot_timeout": 8,
   "reload_timeout": 40,
   "invulnerability_timeout": 120,
 
-  "item_radius": 6,
-  "boots_speed_effect": 2,
+  "item_radius": 4,
+  "boots_speed_effect": 1,
   "mask_hit_score_effect": 50,
   "pocket_max_bullets_effect": 2,
   "dragon_shot_timeout_effect": 4,

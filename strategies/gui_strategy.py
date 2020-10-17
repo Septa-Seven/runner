@@ -22,7 +22,11 @@ class GameWindow(pyglet.window.Window):
         0: (247, 35, 91),
         1: (28, 235, 90),
         2: (32, 227, 217),
-        3: (107, 64, 237)
+        3: (107, 64, 237),
+        4: (58, 240, 185),
+        5: (200, 237, 66),
+        6: (255, 95, 20),
+        7: (168, 39, 132)
     }
 
     ITEM_COLORS = {
@@ -116,21 +120,28 @@ class GameWindow(pyglet.window.Window):
 
             figs.append(circle)
 
-            label = pyglet.text.Label(str(player['score']),
-                                      font_name='Times New Roman',
-                                      font_size=24,
-                                      x=self.game_config['box_width'] - 32,
-                                      y=self.game_config['box_height'] - 32 * (2 + player['id']),
-                                      anchor_x='right', anchor_y='center', color=color + (255,),
-                                      group=hud_group, batch=batch)
-            figs.append(label)
             bullets_count = pyglet.shapes.Rectangle(player['position_x'] + 10, player['position_y'] + 10, 10,
                                           player['bullet_count']/self.game_config['max_bullets']*10,
                                           color=(100, 100, 100), batch=batch, group=hud_group)
             figs.append(bullets_count)
 
+        players_top = list(player_map.keys())
+        players_top.sort(key=lambda player_id: player_map[player_id]['score'], reverse=True)
+
+        for place, player_id in enumerate(players_top):
+            player = player_map[player_id]
+            color = self.PLAYER_COLORS[player['id']]
+            label = pyglet.text.Label(str(player['score']),
+                                      font_name='Times New Roman',
+                                      font_size=24,
+                                      x=self.game_config['box_width'] - 32,
+                                      y=self.game_config['box_height'] - 32 * (2 + place),
+                                      anchor_x='right', anchor_y='center', color=color + (255,),
+                                      group=hud_group, batch=batch)
+            figs.append(label)
+
         not_picked = []
-        player_items = {player_id: [] for player_id in range(self.game_config['players'])}
+        player_items = {player_id: [] for player_id in range(len(self.game_config['players']))}
         for item in self.state['items']:
             if item['player_id'] is None:
                 not_picked.append(item)

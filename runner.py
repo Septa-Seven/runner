@@ -44,10 +44,10 @@ class Server:
 
     async def on_connect(self, reader, writer):
         # TODO close server if client disconnected
-        if len(self.clients) < config.global_config.players:
+        if len(self.clients) < len(config.global_config.players):
             self.clients.append(TCPClient(reader, writer))
 
-            if len(self.clients) == config.global_config.players:
+            if len(self.clients) == len(config.global_config.players):
                 game_loop = GameLoop(self.game, self.clients)
                 await game_loop.play()
 

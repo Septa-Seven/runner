@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Tuple
+from typing import Tuple, Optional
 
 import config
 from game import Game
@@ -8,8 +8,7 @@ from utils import Vec, is_outside_box
 from exceptions import InvalidAction
 
 
-def parse_command(game: Game, player_id: int, command: dict) -> Tuple[Move, Shot]:
-    # print('COMMAND', command)
+def parse_command(game: Game, player_id: int, command: dict) -> Tuple[Optional[Move], Optional[Shot]]:
     try:
         move = Move(**command['move'], game=game, player_id=player_id)
     except (KeyError, TypeError, InvalidAction):
