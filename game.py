@@ -1,7 +1,7 @@
 from __future__ import annotations
 from utils import circles_collide, Vec, is_outside_box
 import config
-from items import Item, Tickable
+from items import item_mapping, Tickable, Crown, Mask
 from exceptions import ShotError
 from timer import Timer
 
@@ -74,23 +74,17 @@ class Game:
         ]
 
         self.bullets = []
-        item_cls_mapping = Item.mapping()
         self.items = [
-            item_cls_mapping[item['id']](Vec(item['spawn_x'], item['spawn_y']))
+            item_mapping[item['id']](Vec(item['spawn_x'], item['spawn_y']))
             for item in config.global_config.items
         ]
+
+        self.effects = []
 
         self.ticks = 0
 
     def tick(self, commands):
-        moves = []
-        shots = []
-        for command in commands:
-            move, shot = command
-            if move is not None:
-                moves.append(move)
-            if shot is not None:
-                shots.append(shot)
+        moves, shots = self.split_actions(commands)
 
         for move_action in moves:
             move_action.apply()
@@ -101,21 +95,27 @@ class Game:
         # check item collisions
         for item in self.items:
             if item.player is None:
+                player_collides = None
                 for player in self.players:
                     if (player.invulnerability_timer.ready()
                             and circles_collide(player.position, item.spawn,
                                                 config.global_config.player_radius,
                                                 config.global_config.item_radius)):
                         # item can't be picked up when it collides with multiple players
-                        if item.player is None:
-                            item.pick(player)
+                        if player_collides is None:
+                            player_collides = player
                         else:
-                            item.drop()
+                            player_collides = None
                             break
 
+                if player_collides:
+                    item.attach(player_collides)
+
         for item in self.items:
-            if isinstance(item, Tickable):
+            if isinstance(item, Crown):
                 item.tick()
+
+        self.tick_effects()
 
         for bullet_index in range(len(self.bullets)-1, -1, -1):
             bullet = self.bullets[bullet_index]
@@ -126,6 +126,7 @@ class Game:
                 continue
 
             bullet.move()
+            masks = [item for item in self.items if isinstance(item, Mask) and item.player == bullet.player]
 
             for player in self.players:
                 if (bullet.player != player
@@ -134,17 +135,47 @@ class Game:
                                             config.global_config.bullet_radius,
                                             config.global_config.player_radius)):
 
-                    for item in self.items:
-                        if item.player == player:
-                            item.drop()
-
                     player.invulnerability_timer.set(config.global_config.invulnerability_timeout)
 
+                    for item in self.items:
+                        if item.player == player:
+                            item.detach()
+
                     bullet.player.score += bullet.player.hit_score
+
+                    for mask in masks:
+                        mask.tick()
+
                     del self.bullets[bullet_index]
 
                     break
 
+        self.perform_shots(shots)
+
+        self.ticks += 1
+
+    @staticmethod
+    def split_actions(commands):
+        moves = []
+        shots = []
+        for command in commands:
+            move, shot = command
+            if move is not None:
+                moves.append(move)
+            if shot is not None:
+                shots.append(shot)
+
+        return moves, shots
+
+    def tick_effects(self):
+        for ind in range(len(self.effects) - 1, -1, -1):
+            effect = self.effects[ind]
+            if effect.is_expired():
+                del self.effects[ind]
+            else:
+                effect.tick()
+
+    def perform_shots(self, shots):
         for shot_action in shots:
             try:
                 bullet = shot_action.apply(self.ticks)
@@ -152,8 +183,6 @@ class Game:
                 continue
             else:
                 self.bullets.append(bullet)
-
-        self.ticks += 1
 
     def is_ended(self):
         return self.ticks == config.global_config.max_ticks

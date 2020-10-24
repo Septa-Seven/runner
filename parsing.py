@@ -62,3 +62,8 @@ class Move(Direction, Action):
 class Shot(Point, Action):
     def apply(self, tick):
         return self.player.shot(self.point, tick)
+
+
+class AimSwitch(ActionInfo, Action):
+    def apply(self):
+        self.player.switch_aim()

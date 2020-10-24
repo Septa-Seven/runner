@@ -2,45 +2,40 @@
   "players": [
     {
       "id": 0,
-      "position_x": 64,
+      "position_x": 284,
       "position_y": 350
     },
     {
       "id": 1,
       "position_x": 350,
-      "position_y": 64
+      "position_y": 284
+    },
+    {
+      "id": 2,
+      "position_x": 414,
+      "position_y": 350
     }
   ],
   "items": [
     {
       "id": 0,
-      "spawn_x": 300,
-      "spawn_y": 400
+      "spawn_x": 350,
+      "spawn_y": 350
     },
     {
       "id": 1,
-      "spawn_x": 350,
-      "spawn_y": 400
+      "spawn_x": 64,
+      "spawn_y": 64
     },
     {
       "id": 2,
-      "spawn_x": 400,
-      "spawn_y": 400
+      "spawn_x": 634,
+      "spawn_y": 64
     },
     {
       "id": 3,
-      "spawn_x": 300,
-      "spawn_y": 300
-    },
-    {
-      "id": 4,
-      "spawn_x": 350,
-      "spawn_y": 300
-    },
-    {
-      "id": 5,
-      "spawn_x": 400,
-      "spawn_y": 300
+      "spawn_x": 64,
+      "spawn_y": 634
     }
   ],
 
@@ -50,21 +45,21 @@
   "box_height": 700,
 
   "bullet_radius": 4,
-  "bullet_speed": 10,
+  "bullet_speed": 15,
   "hit_score": 50,
 
-  "player_radius": 6,
+  "player_radius": 8,
   "player_speed": 2,
 
   "max_bullets": 3,
   "shot_timeout": 8,
-  "reload_timeout": 40,
+  "reload_timeout": 60,
   "invulnerability_timeout": 120,
 
   "item_radius": 4,
   "boots_speed_effect": 1,
-  "mask_hit_score_effect": 50,
-  "pocket_max_bullets_effect": 2,
-  "dragon_shot_timeout_effect": 4,
-  "leaf_reload_timeout_effect": 10
+  "mask_hit_score_increment": 50,
+  "ammunition_max_bullets_effect": 2,
+  "ammunition_shot_timeout_effect": 4,
+  "ammunition_reload_timeout_effect": 30
 }

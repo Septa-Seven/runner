@@ -10,10 +10,10 @@ class GameConfig:
         "hit_score",
         "item_radius",
         "boots_speed_effect",
-        "mask_hit_score_effect",
-        "pocket_max_bullets_effect",
-        "dragon_shot_timeout_effect",
-        "leaf_reload_timeout_effect"
+        "mask_hit_score_increment",
+        "ammunition_max_bullets_effect",
+        "ammunition_shot_timeout_effect",
+        "ammunition_reload_timeout_effect"
     )
 
     def __init__(self, json_data):
