@@ -140,45 +140,37 @@ class GameWindow(pyglet.window.Window):
                                       group=hud_group, batch=batch)
             figs.append(label)
 
-        not_picked = []
-        player_items = {player_id: [] for player_id in range(len(self.game_config['players']))}
         for item in self.state['items']:
-            if item['player_id'] is None:
-                not_picked.append(item)
-            else:
-                player_items[item['player_id']].append(item)
-
             color = self.ITEM_COLORS[item['id']]
 
             spawn = shapes.Rectangle(item['spawn_x'] - self.game_config['item_radius'], item['spawn_y'] - self.game_config['item_radius'],
                                      self.game_config['item_radius'] * 2, self.game_config['item_radius'] * 2,
                                      color=color, group=background_group, batch=batch)
-            spawn.opacity = 60
             figs.append(spawn)
 
-        item_offsets = []
-        for ind in range(len(self.state['items'])):
-            x = math.cos(math.pi * self.state['ticks']/32 + 2 * math.pi / len(self.state['items']) * ind) * self.game_config['player_radius'] * 2
-            y = math.sin(math.pi * self.state['ticks']/32 + 2 * math.pi / len(self.state['items']) * ind) * self.game_config['player_radius'] * 2
-
-            item_offsets.append((x, y))
-
-        for player_id, items in player_items.items():
-            for ind, item in enumerate(items):
-                x = player_map[player_id]['position_x'] + item_offsets[ind][0]
-                y = player_map[player_id]['position_y'] + item_offsets[ind][1]
-                color = self.ITEM_COLORS[item['id']]
-                circle = shapes.Circle(x, y,
-                                       self.game_config['item_radius'], color=color,
-                                       group=background_group, batch=batch)
-                figs.append(circle)
-
-        for item in not_picked:
-            color = self.ITEM_COLORS[item['id']]
-            circle = shapes.Circle(item['spawn_x'], item['spawn_y'],
-                                   self.game_config['item_radius'], color=color,
-                                   group=players_group, batch=batch)
-            figs.append(circle)
+        # item_offsets = []
+        # for ind in range(len(self.state['items'])):
+        #     x = math.cos(math.pi * self.state['ticks']/32 + 2 * math.pi / len(self.state['items']) * ind) * self.game_config['player_radius'] * 2
+        #     y = math.sin(math.pi * self.state['ticks']/32 + 2 * math.pi / len(self.state['items']) * ind) * self.game_config['player_radius'] * 2
+        #
+        #     item_offsets.append((x, y))
+        #
+        # for player_id, items in player_items.items():
+        #     for ind, item in enumerate(items):
+        #         x = player_map[player_id]['position_x'] + item_offsets[ind][0]
+        #         y = player_map[player_id]['position_y'] + item_offsets[ind][1]
+        #         color = self.ITEM_COLORS[item['id']]
+        #         circle = shapes.Circle(x, y,
+        #                                self.game_config['item_radius'], color=color,
+        #                                group=background_group, batch=batch)
+        #         figs.append(circle)
+        #
+        # for item in not_picked:
+        #     color = self.ITEM_COLORS[item['id']]
+        #     circle = shapes.Circle(item['spawn_x'], item['spawn_y'],
+        #                            self.game_config['item_radius'], color=color,
+        #                            group=players_group, batch=batch)
+        #     figs.append(circle)
 
         for bullet in self.state['bullets']:
             circle = shapes.Circle(bullet['position_x'], bullet['position_y'], self.game_config['bullet_radius'],

@@ -3,8 +3,8 @@ import json
 import signal
 
 import argparse
-from game import Game
-from game_loop import GameLoop
+from game.game import Game
+from game.game_loop import GameLoop
 from clients import ProcessClient, TCPClient
 from config import set_global_config, GameConfig
 import config

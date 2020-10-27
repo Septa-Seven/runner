@@ -1,7 +1,7 @@
 import asyncio
 import json
 
-from game import Game
+from game.game import Game
 import config
 from parsing import parse_command
 
@@ -44,9 +44,7 @@ class GameLoop:
                     continue
 
                 parsed_command = parse_command(self.game, client_id, command)
-
-                if parsed_command:
-                    parsed_commands.append(parsed_command)
+                parsed_commands.append(parsed_command)
 
             self.game.tick(parsed_commands)
 

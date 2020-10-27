@@ -4,16 +4,6 @@
       "id": 0,
       "position_x": 284,
       "position_y": 350
-    },
-    {
-      "id": 1,
-      "position_x": 350,
-      "position_y": 284
-    },
-    {
-      "id": 2,
-      "position_x": 414,
-      "position_y": 350
     }
   ],
   "items": [
@@ -36,6 +26,16 @@
       "id": 3,
       "spawn_x": 64,
       "spawn_y": 634
+    },
+    {
+      "id": 4,
+      "spawn_x": 634,
+      "spawn_y": 634
+    },
+    {
+      "id": 5,
+      "spawn_x": 350,
+      "spawn_y": 64
     }
   ],
 

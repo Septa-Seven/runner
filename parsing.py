@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Tuple, Optional
 
 import config
-from game import Game
-from utils import Vec, is_outside_box
+from game.game import Game
+from game.utils import Vec, is_outside_box
 from exceptions import InvalidAction
 
 
@@ -22,12 +22,15 @@ def parse_command(game: Game, player_id: int, command: dict) -> Tuple[Optional[M
     return move, shot
 
 
-class ActionInfo:
-    def __init__(self, game, player_id):
+class Action:
+    def __init__(self, game: Game, player_id: int):
         self.player = game.get_player_by_id(player_id)
 
+    def apply(self, *args, **kwargs):
+        raise NotImplemented
 
-class Direction(ActionInfo):
+
+class Direction(Action):
     def __init__(self, direction_x, direction_y, *args, **kwargs):
         if not isinstance(direction_x, (int, float)) or not isinstance(direction_y, (int, float)):
             raise InvalidAction
@@ -36,7 +39,7 @@ class Direction(ActionInfo):
         super().__init__(*args, **kwargs)
 
 
-class Point(ActionInfo):
+class Point(Action):
     def __init__(self, game, player_id, point_x, point_y):
         if not isinstance(point_x, (int, float)) or not isinstance(point_y, (int, float)):
             raise InvalidAction
@@ -49,21 +52,11 @@ class Point(ActionInfo):
         self.point = Vec(point_x, point_y)
 
 
-class Action:
-    def apply(self, *args, **kwargs):
-        raise NotImplemented
-
-
-class Move(Direction, Action):
+class Move(Direction):
     def apply(self):
         self.player.move(self.direction)
 
 
-class Shot(Point, Action):
+class Shot(Point):
     def apply(self, tick):
         return self.player.shot(self.point, tick)
-
-
-class AimSwitch(ActionInfo, Action):
-    def apply(self):
-        self.player.switch_aim()

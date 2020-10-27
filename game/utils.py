@@ -42,17 +42,27 @@ class Vec:
     def __abs__(self) -> float:
         return math.sqrt(self.x * self.x + self.y * self.y)
 
+    def length(self) -> float:
+        return math.sqrt(self.x**2 + self.y**2)
+
     @staticmethod
     def unit(v: Vec) -> Vec:
-        m = max(abs(v.x), abs(v.y))
-        if m == 0:
+        l = v.length()
+        if l == 0:
             return Vec(0.0, 0.0)
         else:
-            return Vec(v.x/m, v.y/m)
+            return Vec(v.x/l, v.y/l)
 
     @staticmethod
     def distance(v1: Vec, v2: Vec) -> float:
         return math.sqrt((v1.x - v2.x)**2 + (v1.y - v2.y)**2)
+
+    @staticmethod
+    def rotate(v: Vec, angle: float):
+        return Vec(
+            v.x * math.cos(angle) - v.y * math.sin(angle),
+            v.x * math.sin(angle) + v.y * math.cos(angle)
+        )
 
     def is_zero(self) -> bool:
         return self.x == 0.0 and self.y == 0.0
