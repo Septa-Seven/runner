@@ -12,6 +12,13 @@ class Attachment:
     def detach(self):
         self.player = None
 
+    def detach_from_player(self, player) -> bool:
+        if self.player is player:
+            self.detach()
+            return True
+
+        return False
+
 
 class Modifier(Attachment):
     def attach(self, player):
@@ -62,6 +69,14 @@ class CrownModifier(Attachment, Tickable):
             self.player.score += 1
 
 
+class DummyModifier(Modifier):
+    def attach_effect(self):
+        pass
+
+    def detach_effect(self):
+        pass
+
+
 class BootsModifier(Modifier):
 
     def attach_effect(self):
@@ -71,7 +86,7 @@ class BootsModifier(Modifier):
         self.player.speed -= config.global_config.boots_speed_effect
 
 
-class MaskModifier(Modifier):
+class MaskModifier(Modifier, Tickable):
 
     def __init__(self):
         super().__init__()
@@ -79,11 +94,11 @@ class MaskModifier(Modifier):
 
     def tick_action(self):
         self.total_hit_score_bonus += config.global_config.mask_hit_score_increment
-        self.player.hit_score += config.global_config.mask_hit_score_increment
+        self.player.weapon.hit_score += config.global_config.mask_hit_score_increment
 
     def attach_effect(self):
         pass
 
     def detach_effect(self):
-        self.player.hit_score -= self.total_hit_score_bonus
+        self.player.weapon.hit_score -= self.total_hit_score_bonus
         self.total_hit_score_bonus = 0

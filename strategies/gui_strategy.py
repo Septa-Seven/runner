@@ -15,8 +15,8 @@ class GameWindow(pyglet.window.Window):
     KEY_RIGHT = key.D
     KEY_UP = key.W
     KEY_DOWN = key.S
+    KEY_PICK_WEAPON = key.F
     KEY_SHOT = pyglet.window.mouse.LEFT
-    KEY_BLINK = pyglet.window.mouse.RIGHT
 
     PLAYER_COLORS = {
         0: (247, 35, 91),
@@ -47,13 +47,10 @@ class GameWindow(pyglet.window.Window):
         self.key_handler = key.KeyStateHandler()
         self.push_handlers(self.key_handler)
         self.shot_point = None
-        self.blink_direction = None
 
     def on_mouse_press(self, x, y, button, modifiers):
         if button == self.KEY_SHOT:
             self.shot_point = (x, y)
-        if button == self.KEY_BLINK:
-            self.blink_direction = (x, y)
 
     def get_move_direction(self):
         x = 0
@@ -73,6 +70,9 @@ class GameWindow(pyglet.window.Window):
                 'direction_y': y
             }
 
+    def get_pick_weapon(self):
+        return self.key_handler[self.KEY_PICK_WEAPON]
+
     def get_shot_point(self):
         if self.shot_point is not None:
             data = {
@@ -87,12 +87,15 @@ class GameWindow(pyglet.window.Window):
 
         move = self.get_move_direction()
         shot = self.get_shot_point()
+        pick_weapon = self.get_pick_weapon()
 
         command = {}
         if move:
             command['move'] = move
         if shot:
             command['shot'] = shot
+        if pick_weapon:
+            command['pick_weapon'] = pick_weapon
 
         print(json.dumps(command), flush=True)
 

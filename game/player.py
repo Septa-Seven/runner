@@ -10,8 +10,7 @@ class Player:
     def __init__(self, id: int, position: Vec):
         self.speed = config.global_config.player_speed
 
-        self.weapon = OneBulletWeapon.pistol()
-        self.weapon.attach(self)
+        self.pick_weapon(OneBulletWeapon.pistol())
 
         self.id = id
         self.position = position
@@ -39,3 +38,7 @@ class Player:
     def pick_weapon(self, weapon: 'Weapon'):
         self.weapon = weapon
         weapon.attach(self)
+
+    def drop_out(self, invulnerability_timeout):
+        self.invulnerability_timer.set(invulnerability_timeout)
+        self.pick_weapon(OneBulletWeapon.pistol())

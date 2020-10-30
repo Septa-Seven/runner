@@ -4,40 +4,36 @@
       "id": 0,
       "position_x": 284,
       "position_y": 350
+    },
+    {
+      "id": 1,
+      "position_x": 350,
+      "position_y": 284
     }
   ],
   "items": [
     {
-      "id": 0,
       "spawn_x": 350,
       "spawn_y": 350
     },
     {
-      "id": 1,
       "spawn_x": 64,
       "spawn_y": 64
     },
     {
-      "id": 2,
       "spawn_x": 634,
       "spawn_y": 64
     },
     {
-      "id": 3,
       "spawn_x": 64,
       "spawn_y": 634
     },
     {
-      "id": 4,
       "spawn_x": 634,
       "spawn_y": 634
-    },
-    {
-      "id": 5,
-      "spawn_x": 350,
-      "spawn_y": 64
     }
   ],
+  "spawn_item_every": 100,
 
   "max_ticks": 2000000,
 

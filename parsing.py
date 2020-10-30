@@ -8,7 +8,8 @@ from game.utils import Vec, is_outside_box
 from exceptions import InvalidAction
 
 
-def parse_command(game: Game, player_id: int, command: dict) -> Tuple[Optional[Move], Optional[Shot]]:
+def parse_command(game: Game, player_id: int, command: dict) -> \
+        Tuple[Optional[Move], Optional[Shot], Optional[PickWeapon]]:
     try:
         move = Move(**command['move'], game=game, player_id=player_id)
     except (KeyError, TypeError, InvalidAction):
@@ -19,7 +20,12 @@ def parse_command(game: Game, player_id: int, command: dict) -> Tuple[Optional[M
     except (KeyError, TypeError, InvalidAction):
         shot = None
 
-    return move, shot
+    try:
+        pick_weapon = PickWeapon(command['pick_weapon'], game=game, player_id=player_id)
+    except (KeyError, TypeError, InvalidAction):
+        pick_weapon = None
+
+    return move, shot, pick_weapon
 
 
 class Action:
@@ -60,3 +66,11 @@ class Move(Direction):
 class Shot(Point):
     def apply(self, tick):
         return self.player.shot(self.point, tick)
+
+
+class PickWeapon(Action):
+    def __init__(self, pick, game, player_id):
+        if pick is not True:
+            raise InvalidAction
+
+        super().__init__(game, player_id)

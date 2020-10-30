@@ -42,6 +42,12 @@ class Vec:
     def __abs__(self) -> float:
         return math.sqrt(self.x * self.x + self.y * self.y)
 
+    def __hash__(self):
+        return hash((self.x, self.y))
+
+    def __eq__(self, other: Vec):
+        return self.x == other.x and self.y == other.y
+
     def length(self) -> float:
         return math.sqrt(self.x**2 + self.y**2)
 

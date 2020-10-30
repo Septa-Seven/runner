@@ -1,15 +1,11 @@
-from typing import Optional
+from typing import Callable
 
-from game.utils import Vec
-from game.modifiers import CrownModifier, MaskModifier, BootsModifier, Modifier
+from game.modifiers import CrownModifier, MaskModifier, BootsModifier, Modifier, DummyModifier
 from game.weapons import ShotgunWeapon, OneBulletWeapon
 
 
 class Item:
-    def __init__(self, spawn_position: Vec):
-        self.spawn = spawn_position
-
-    def pick(self, player) -> Optional[Modifier]:
+    def pick(self, player) -> Modifier:
         raise NotImplemented
 
 
@@ -40,28 +36,24 @@ class Boots(Item):
         return boots
 
 
-class ShotgunItem(Item):
+class WeaponItem(Item):
+    weapon_constructor: Callable = None
+
+    def pick(self, player):
+        player.pick_weapon(self.weapon_constructor())
+        m = DummyModifier()
+        m.attach(player)
+        return m
+
+
+class ShotgunItem(WeaponItem):
     id = 3
-
-    def pick(self, player):
-        player.pick_weapon(ShotgunWeapon.shotgun())
+    weapon_constructor = ShotgunWeapon.shotgun
 
 
-class PistolItem(Item):
+class SniperRifleItem(WeaponItem):
     id = 4
-
-    def pick(self, player):
-        player.pick_weapon(OneBulletWeapon.pistol())
+    weapon_constructor = OneBulletWeapon.sniper_rifle
 
 
-class SniperRifleItem(Item):
-    id = 5
-
-    def pick(self, player):
-        player.pick_weapon(OneBulletWeapon.sniper_rifle())
-
-
-item_mapping = {
-    cls.id: cls
-    for cls in [Crown, Mask, Boots, SniperRifleItem, PistolItem, ShotgunItem]
-}
+ITEMS = [Crown, Mask, Boots, SniperRifleItem, ShotgunItem]

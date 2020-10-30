@@ -1,7 +1,9 @@
 from __future__ import annotations
+import random
+
 from game.player import Player
 from game.utils import circles_collide, Vec, is_outside_box
-from game.items import item_mapping
+from game.items import ITEMS, WeaponItem
 from game.modifiers import CrownModifier, MaskModifier
 from exceptions import ShotError
 import config
@@ -15,16 +17,31 @@ class Game:
         ]
 
         self.bullets = []
-        self.items = [
-            item_mapping[item['id']](Vec(item['spawn_x'], item['spawn_y']))
-            for item in config.global_config.items
-        ]
+
+        self.item_spots = {
+            Vec(spawn['spawn_x'], spawn['spawn_y']): None
+            for spawn in config.global_config.items
+        }
+        self.fill_item_spots(len(self.item_spots))
+
         self.modifiers = []
 
         self.ticks = 0
 
+    def fill_item_spots(self, n=1):
+        if n <= 0:
+            return
+
+        empty_spots = [item_spot for item_spot, item in self.item_spots.items() if item is None]
+        items_not_on_map = list(set(ITEMS) - set(map(type, self.item_spots.values())))
+        random.shuffle(empty_spots)
+        random.shuffle(items_not_on_map)
+
+        for _ in range(min(len(empty_spots), len(items_not_on_map), n)):
+            self.item_spots[empty_spots.pop()] = items_not_on_map.pop()()
+
     def tick(self, commands):
-        moves, shots = self.split_actions(commands)
+        moves, shots, pick_weapons = self.split_actions(commands)
 
         for move_action in moves:
             move_action.apply()
@@ -33,12 +50,21 @@ class Game:
             player.timeouts()
 
         # check item collisions
-        for item_index in range(len(self.items) - 1, -1, -1):
-            item = self.items[item_index]
+        players_trying_pick = tuple(pick_weapon.player for pick_weapon in pick_weapons)
+
+        for item_spawn, item in self.item_spots.items():
+            if item is None:
+                continue
+
+            if isinstance(item, WeaponItem):
+                check_players = players_trying_pick
+            else:
+                check_players = self.players
+
             player_collides = None
-            for player in self.players:
+            for player in check_players:
                 if (player.invulnerability_timer.ready()
-                        and circles_collide(player.position, item.spawn,
+                        and circles_collide(player.position, item_spawn,
                                             config.global_config.player_radius,
                                             config.global_config.item_radius)):
                     # item can't be picked up when it collides with multiple players
@@ -50,7 +76,7 @@ class Game:
 
             if player_collides:
                 modifier = item.pick(player_collides)
-                del self.items[item_index]
+                self.item_spots[item_spawn] = None
                 if modifier:
                     self.modifiers.append(modifier)
 
@@ -69,7 +95,7 @@ class Game:
                 continue
 
             bullet.move()
-            masks = [item for item in self.items if isinstance(item, MaskModifier) and item.player == bullet.player]
+            masks = [item for item in self.modifiers if isinstance(item, MaskModifier) and item.player == bullet.player]
 
             for player in self.players:
                 if (bullet.player != player
@@ -78,11 +104,7 @@ class Game:
                                             config.global_config.bullet_radius,
                                             config.global_config.player_radius)):
 
-                    player.invulnerability_timer.set(config.global_config.invulnerability_timeout)
-                    #
-                    # for item in self.items:
-                    #     if item.player == player:
-                    #         item.detach()
+                    player.drop_out(config.global_config.invulnerability_timeout)
 
                     bullet.player.score += bullet.player.weapon.hit_score
 
@@ -90,6 +112,16 @@ class Game:
                         mask.tick()
 
                     del self.bullets[bullet_index]
+
+                    modifiers_count_before_clean = len(self.modifiers)
+
+                    self.modifiers = [
+                        modifier
+                        for modifier in self.modifiers
+                        if not modifier.detach_from_player(player)
+                    ]
+
+                    self.fill_item_spots(modifiers_count_before_clean - len(self.modifiers))
 
                     break
 
@@ -101,14 +133,17 @@ class Game:
     def split_actions(commands):
         moves = []
         shots = []
+        pick_weapons = []
         for command in commands:
-            move, shot = command
+            move, shot, pick_weapon = command
             if move is not None:
                 moves.append(move)
             if shot is not None:
                 shots.append(shot)
+            if pick_weapon is not None:
+                pick_weapons.append(pick_weapon)
 
-        return moves, shots
+        return moves, shots, pick_weapons
 
     def tick_effects(self):
         for ind in range(len(self.modifiers) - 1, -1, -1):
@@ -163,9 +198,10 @@ class Game:
             'items': [
                 {
                     'id': item.id,
-                    'spawn_x': item.spawn.x,
-                    'spawn_y': item.spawn.y,
+                    'spawn_x': item_spawn.x,
+                    'spawn_y': item_spawn.y,
                 }
-                for item in self.items
+                for item_spawn, item in self.item_spots.items()
+                if item is not None
             ]
         }
