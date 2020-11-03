@@ -3,7 +3,9 @@ class GameConfig:
         "players", "max_ticks",
         "items",
         "item_radius",
-        "spawn_item_every",
+        "chainsaws",
+        "chainsaw_radius",
+        "chainsaw_speed",
         "box_width", "box_height",
         "bullet_radius", "bullet_speed",
         "player_radius", "player_speed",
@@ -14,7 +16,7 @@ class GameConfig:
         "mask_hit_score_increment",
         "ammunition_max_bullets_effect",
         "ammunition_shot_timeout_effect",
-        "ammunition_reload_timeout_effect"
+        "ammunition_reload_timeout_effect",
     )
 
     def __init__(self, json_data):

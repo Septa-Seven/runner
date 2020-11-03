@@ -2,38 +2,72 @@
   "players": [
     {
       "id": 0,
-      "position_x": 284,
-      "position_y": 350
-    },
-    {
-      "id": 1,
-      "position_x": 350,
-      "position_y": 284
+      "x": 284,
+      "y": 350
     }
   ],
   "items": [
     {
-      "spawn_x": 350,
-      "spawn_y": 350
+      "x": 350,
+      "y": 350
     },
     {
-      "spawn_x": 64,
-      "spawn_y": 64
+      "x": 64,
+      "y": 64
     },
     {
-      "spawn_x": 634,
-      "spawn_y": 64
+      "x": 634,
+      "y": 64
     },
     {
-      "spawn_x": 64,
-      "spawn_y": 634
+      "x": 64,
+      "y": 634
     },
     {
-      "spawn_x": 634,
-      "spawn_y": 634
+      "x": 634,
+      "y": 634
     }
   ],
-  "spawn_item_every": 100,
+  "chainsaws": [
+    [
+      {
+        "x": 64,
+        "y": 64
+      },
+      {
+        "x": 634,
+        "y": 64
+      },
+      {
+        "x": 634,
+        "y": 634
+      },
+      {
+        "x": 64,
+        "y": 634
+      }
+    ],
+    [
+      {
+        "x": 284,
+        "y": 284
+      },
+      {
+        "x": 416,
+        "y": 284
+      },
+      {
+        "x": 416,
+        "y": 416
+      },
+      {
+        "x": 284,
+        "y": 416
+      }
+    ]
+  ],
+  "chainsaw_radius": 16,
+  "chainsaw_speed": 3,
 
   "max_ticks": 2000000,
 
@@ -45,7 +79,7 @@
   "hit_score": 50,
 
   "player_radius": 8,
-  "player_speed": 2,
+  "player_speed": 3,
 
   "max_bullets": 3,
   "shot_timeout": 8,
@@ -53,7 +87,7 @@
   "invulnerability_timeout": 120,
 
   "item_radius": 4,
-  "boots_speed_effect": 1,
+  "boots_speed_effect": 2,
   "mask_hit_score_increment": 50,
   "ammunition_max_bullets_effect": 2,
   "ammunition_shot_timeout_effect": 4,

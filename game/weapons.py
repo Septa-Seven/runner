@@ -83,8 +83,8 @@ class ShotgunWeapon(Weapon):
         direction = target - self.player.position
         return [
             Bullet(self.player, self.player.position, target, self.bullet_speed, tick),
-            Bullet(self.player, self.player.position, self.player.position + Vec.rotate(direction, math.pi/12), self.bullet_speed, tick),
-            Bullet(self.player, self.player.position, self.player.position + Vec.rotate(direction, -math.pi/12), self.bullet_speed, tick)
+            Bullet(self.player, self.player.position, self.player.position + Vec.rotate(direction, math.pi/24), self.bullet_speed, tick),
+            Bullet(self.player, self.player.position, self.player.position + Vec.rotate(direction, -math.pi/24), self.bullet_speed, tick)
         ]
 
     @classmethod

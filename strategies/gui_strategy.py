@@ -38,6 +38,8 @@ class GameWindow(pyglet.window.Window):
         5: (133, 232, 35),
     }
 
+    CHAINSAW_COLOR = (120, 120, 120)
+
     def __init__(self):
         self.game_config = get_message()
         super().__init__(self.game_config['box_width'], self.game_config['box_height'])
@@ -47,6 +49,9 @@ class GameWindow(pyglet.window.Window):
         self.key_handler = key.KeyStateHandler()
         self.push_handlers(self.key_handler)
         self.shot_point = None
+        with open('a.txt', 'w') as f:
+            f.write(str(self.game_config))
+        self.last_score_diff = {player['id']: 0 for player in self.game_config['players']}
 
     def on_mouse_press(self, x, y, button, modifiers):
         if button == self.KEY_SHOT:
@@ -150,6 +155,14 @@ class GameWindow(pyglet.window.Window):
                                      self.game_config['item_radius'] * 2, self.game_config['item_radius'] * 2,
                                      color=color, group=background_group, batch=batch)
             figs.append(spawn)
+
+        for chainsaw in self.state['chainsaws']:
+            circle = shapes.Circle(chainsaw['position_x'], chainsaw['position_y'],
+                                   self.game_config['chainsaw_radius'], color=self.CHAINSAW_COLOR,
+                                   group=players_group, batch=batch)
+            circle.opacity = 190
+            figs.append(circle)
+
 
         # item_offsets = []
         # for ind in range(len(self.state['items'])):
