@@ -5,10 +5,6 @@ from game.game import Game
 import config
 from parsing import parse_command
 
-RESPONSE_TIMEOUT = 2.0
-EXECUTION_TIMEOUT = 5.0
-MAX_TICKS = 100
-
 
 class GameLoop:
     def __init__(self, game: Game, clients):
@@ -64,14 +60,16 @@ class GameLoop:
         # TODO don't know about execution time
         # requests command but if it fails disconnects client
         try:
-            return await asyncio.wait_for(self.clients[client_id].get_command(), timeout=EXECUTION_TIMEOUT)
+            return await asyncio.wait_for(self.clients[client_id].get_command(),
+                                          timeout=config.global_config.execution_time)
         except:
             self.disconnect_client(client_id)
 
     async def send_message_wrapper(self, client_id, msg):
         # send message but if it fails disconnect client
         try:
-            await asyncio.wait_for(self.clients[client_id].send_message(msg), timeout=RESPONSE_TIMEOUT)
+            await asyncio.wait_for(self.clients[client_id].send_message(msg),
+                                   timeout=config.global_config.response_timeout)
         except Exception:
             self.disconnect_client(client_id)
 

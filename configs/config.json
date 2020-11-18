@@ -1,4 +1,6 @@
 {
+  "execution_time": 5.0,
+  "response_time": 2.0,
   "players": [
     {
       "id": 0,
@@ -28,44 +30,7 @@
       "y": 634
     }
   ],
-  "chainsaws": [
-    [
-      {
-        "x": 64,
-        "y": 64
-      },
-      {
-        "x": 634,
-        "y": 64
-      },
-      {
-        "x": 634,
-        "y": 634
-      },
-      {
-        "x": 64,
-        "y": 634
-      }
-    ],
-    [
-      {
-        "x": 284,
-        "y": 284
-      },
-      {
-        "x": 416,
-        "y": 284
-      },
-      {
-        "x": 416,
-        "y": 416
-      },
-      {
-        "x": 284,
-        "y": 416
-      }
-    ]
-  ],
+  "chainsaws": [],
   "chainsaw_radius": 16,
   "chainsaw_speed": 3,
 
@@ -91,5 +56,5 @@
   "mask_hit_score_increment": 50,
   "ammunition_max_bullets_effect": 2,
   "ammunition_shot_timeout_effect": 4,
-  "ammunition_reload_timeout_effect": 30
+  "ammunition_reload_timeout_effect": 30,
 }

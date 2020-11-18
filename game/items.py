@@ -1,6 +1,6 @@
 from typing import Callable
 
-from game.modifiers import CrownModifier, MaskModifier, BootsModifier, Modifier, DummyModifier
+from game.modifiers import CrownModifier, MaskModifier, BootsModifier, Modifier
 from game.weapons import ShotgunWeapon, OneBulletWeapon
 
 
@@ -41,9 +41,6 @@ class WeaponItem(Item):
 
     def pick(self, player):
         player.pick_weapon(self.weapon_constructor())
-        m = DummyModifier()
-        m.attach(player)
-        return m
 
 
 class ShotgunItem(WeaponItem):

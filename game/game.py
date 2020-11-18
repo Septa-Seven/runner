@@ -1,5 +1,6 @@
 from __future__ import annotations
 import random
+from itertools import chain
 
 from game.player import Player
 from game.utils import circles_collide, Vec, is_outside_box
@@ -23,12 +24,14 @@ class Game:
             Vec(**spot): None
             for spot in config.global_config.items
         }
+        self.picked_items = {player: [] for player in self.players}
+        self.fill_item_spots(len(self.item_spots))
+
         self.chainsaws = [
             PathMover(config.global_config.chainsaw_speed,
                       [Vec(**point) for point in chainsaw_path])
             for chainsaw_path in config.global_config.chainsaws
         ]
-        self.fill_item_spots(len(self.item_spots))
 
         self.modifiers = []
 
@@ -39,7 +42,7 @@ class Game:
             return
 
         empty_spots = [item_spot for item_spot, item in self.item_spots.items() if item is None]
-        items_not_on_map = list(set(ITEMS) - set(map(type, self.item_spots.values())))
+        items_not_on_map = list(set(ITEMS) - set(map(type, chain(self.item_spots.values(), self.picked_items.values()))))
         random.shuffle(empty_spots)
         random.shuffle(items_not_on_map)
 
@@ -49,6 +52,49 @@ class Game:
     def tick(self, commands):
         moves, shots, pick_weapons = self.split_actions(commands)
 
+        active_players = self.chainsaw_logic()
+
+        for move_action in moves:
+            move_action.apply()
+
+        for player in self.players:
+            player.timeouts()
+
+        self.item_logic(active_players, pick_weapons)
+
+        for item in self.modifiers:
+            if isinstance(item, CrownModifier):
+                item.tick()
+
+        self.bullets_logic(active_players)
+        self.perform_shots(shots)
+
+        self.ticks += 1
+
+    @staticmethod
+    def split_actions(commands):
+        moves = []
+        shots = []
+        pick_weapons = []
+        for command in commands:
+            move, shot, pick_weapon = command
+            if move is not None:
+                moves.append(move)
+            if shot is not None:
+                shots.append(shot)
+            if pick_weapon is not None:
+                pick_weapons.append(pick_weapon)
+
+        return moves, shots, pick_weapons
+
+    def get_active_players(self):
+        return [
+            player
+            for player in self.players
+            if player.invulnerability_timer.ready()
+        ]
+
+    def chainsaw_logic(self):
         active_players = self.get_active_players()
 
         for chainsaw in self.chainsaws:
@@ -69,13 +115,43 @@ class Game:
                                    config.global_config.chainsaw_radius):
                     del self.bullets[bullet_index]
 
-        for move_action in moves:
-            move_action.apply()
+        return active_players
 
-        for player in self.players:
-            player.timeouts()
+    def bullets_logic(self, active_players):
+        for bullet_index in range(len(self.bullets) - 1, -1, -1):
+            bullet = self.bullets[bullet_index]
+            if is_outside_box(bullet.position.x, bullet.position.y,
+                              config.global_config.box_width,
+                              config.global_config.box_height):
+                del self.bullets[bullet_index]
+                continue
 
-        # check item collisions
+            masks = [item for item in self.modifiers if isinstance(item, MaskModifier) and item.player == bullet.player]
+
+            for player_index in range(len(active_players) - 1, -1, -1):
+                player = active_players[player_index]
+                if (bullet.player != player
+                        and circles_collide(bullet.position, player.position,
+                                            config.global_config.bullet_radius,
+                                            config.global_config.player_radius)):
+
+                    bullet.player.score += bullet.player.weapon.hit_score
+
+                    for mask in masks:
+                        mask.tick()
+
+                    del self.bullets[bullet_index]
+
+                    self.drop_player(player)
+                    del active_players[player_index]
+
+                    break
+            else:
+                bullet.move()
+
+        return active_players
+
+    def item_logic(self, active_players, pick_weapons):
         players_trying_pick = [
             pick_weapon.player
             for pick_weapon in pick_weapons
@@ -106,82 +182,22 @@ class Game:
             if player_collides:
                 modifier = item.pick(player_collides)
                 self.item_spots[item_spawn] = None
+                self.picked_items[player_collides].append(item)
                 if modifier:
                     self.modifiers.append(modifier)
-
-        for item in self.modifiers:
-            if isinstance(item, CrownModifier):
-                item.tick()
-
-        for bullet_index in range(len(self.bullets)-1, -1, -1):
-            bullet = self.bullets[bullet_index]
-            if is_outside_box(bullet.position.x, bullet.position.y,
-                              config.global_config.box_width,
-                              config.global_config.box_height):
-                del self.bullets[bullet_index]
-                continue
-
-            bullet.move()
-            masks = [item for item in self.modifiers if isinstance(item, MaskModifier) and item.player == bullet.player]
-
-            for player_index in range(len(active_players) - 1, -1, -1):
-                player = active_players[player_index]
-                if (bullet.player != player
-                        and circles_collide(bullet.position, player.position,
-                                            config.global_config.bullet_radius,
-                                            config.global_config.player_radius)):
-
-                    bullet.player.score += bullet.player.weapon.hit_score
-
-                    for mask in masks:
-                        mask.tick()
-
-                    del self.bullets[bullet_index]
-
-                    self.drop_player(player)
-                    del active_players[player_index]
-
-                    break
-
-        self.perform_shots(shots)
-
-        self.ticks += 1
-
-    @staticmethod
-    def split_actions(commands):
-        moves = []
-        shots = []
-        pick_weapons = []
-        for command in commands:
-            move, shot, pick_weapon = command
-            if move is not None:
-                moves.append(move)
-            if shot is not None:
-                shots.append(shot)
-            if pick_weapon is not None:
-                pick_weapons.append(pick_weapon)
-
-        return moves, shots, pick_weapons
-
-    def get_active_players(self):
-        return [
-            player
-            for player in self.players
-            if player.invulnerability_timer.ready()
-        ]
 
     def drop_player(self, player):
         player.drop_out(config.global_config.invulnerability_timeout)
 
-        modifiers_count_before_clean = len(self.modifiers)
-
         self.modifiers = [
             modifier
             for modifier in self.modifiers
-            if not modifier.detach_from_player(player)
+            if not modifier.try_detach_from_player(player)
         ]
 
-        self.fill_item_spots(modifiers_count_before_clean - len(self.modifiers))
+        fill_number = len(self.picked_items[player])
+        self.picked_items[player] = []
+        self.fill_item_spots(fill_number)
 
     def perform_shots(self, shots):
         for shot_action in shots:

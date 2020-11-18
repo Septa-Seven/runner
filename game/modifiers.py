@@ -1,4 +1,3 @@
-from game.timer import Timer
 import config
 
 
@@ -12,7 +11,7 @@ class Attachment:
     def detach(self):
         self.player = None
 
-    def detach_from_player(self, player) -> bool:
+    def try_detach_from_player(self, player) -> bool:
         if self.player is player:
             self.detach()
             return True
@@ -44,37 +43,10 @@ class Tickable:
         raise NotImplemented
 
 
-class Temporary(Tickable):
-    def __init__(self, ticks: int):
-        self.timer = Timer()
-        self.timer.set(ticks)
-
-    def tick(self):
-        if not self.timer.ready():
-            super().tick()
-
-    def is_expired(self):
-        return self.timer.ready()
-
-
-class TemporaryModifier(Modifier, Temporary):
-    def __init__(self, ticks):
-        Modifier.__init__(self)
-        Temporary.__init__(self, ticks)
-
-
 class CrownModifier(Attachment, Tickable):
     def tick_action(self):
         if self.player is not None:
             self.player.score += 1
-
-
-class DummyModifier(Modifier):
-    def attach_effect(self):
-        pass
-
-    def detach_effect(self):
-        pass
 
 
 class BootsModifier(Modifier):

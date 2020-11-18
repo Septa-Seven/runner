@@ -40,17 +40,15 @@ class GameWindow(pyglet.window.Window):
 
     CHAINSAW_COLOR = (120, 120, 120)
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.game_config = get_message()
-        super().__init__(self.game_config['box_width'], self.game_config['box_height'])
+        super().__init__(self.game_config['box_width'], self.game_config['box_height'], *args, **kwargs)
 
         self.state = None
 
         self.key_handler = key.KeyStateHandler()
         self.push_handlers(self.key_handler)
         self.shot_point = None
-        with open('a.txt', 'w') as f:
-            f.write(str(self.game_config))
         self.last_score_diff = {player['id']: 0 for player in self.game_config['players']}
 
     def on_mouse_press(self, x, y, button, modifiers):
@@ -204,7 +202,8 @@ class GameWindow(pyglet.window.Window):
 
 
 def main():
-    game_window = GameWindow()
+    config = pyglet.gl.Config(sample_buffers=1, samples=4)
+    game_window = GameWindow(config=config, resizable=True)
     pyglet.gl.glClearColor(1, 1, 1, 1)
     pyglet.clock.schedule_interval(game_window.tick, 1/60)
     pyglet.app.run()

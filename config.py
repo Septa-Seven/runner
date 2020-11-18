@@ -1,5 +1,7 @@
 class GameConfig:
     __slots__ = (
+        "execution_timeout",
+        "response_timeout",
         "players", "max_ticks",
         "items",
         "item_radius",
