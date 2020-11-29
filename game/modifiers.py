@@ -1,6 +1,3 @@
-import config
-
-
 class Attachment:
     def __init__(self):
         self.player = None
@@ -47,30 +44,3 @@ class CrownModifier(Attachment, Tickable):
     def tick_action(self):
         if self.player is not None:
             self.player.score += 1
-
-
-class BootsModifier(Modifier):
-
-    def attach_effect(self):
-        self.player.speed += config.global_config.boots_speed_effect
-
-    def detach_effect(self):
-        self.player.speed -= config.global_config.boots_speed_effect
-
-
-class MaskModifier(Modifier, Tickable):
-
-    def __init__(self):
-        super().__init__()
-        self.total_hit_score_bonus = 0
-
-    def tick_action(self):
-        self.total_hit_score_bonus += config.global_config.mask_hit_score_increment
-        self.player.weapon.hit_score += config.global_config.mask_hit_score_increment
-
-    def attach_effect(self):
-        pass
-
-    def detach_effect(self):
-        self.player.weapon.hit_score -= self.total_hit_score_bonus
-        self.total_hit_score_bonus = 0

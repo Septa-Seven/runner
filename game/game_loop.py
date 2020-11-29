@@ -61,7 +61,7 @@ class GameLoop:
         # requests command but if it fails disconnects client
         try:
             return await asyncio.wait_for(self.clients[client_id].get_command(),
-                                          timeout=config.global_config.execution_time)
+                                          timeout=config.global_config.execution_timeout)
         except:
             self.disconnect_client(client_id)
 

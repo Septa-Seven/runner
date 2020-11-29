@@ -12,10 +12,10 @@ import config
 
 
 class Bullet:
-    def __init__(self, player: 'Player', position: Vec, target: Vec, speed: float, created_at: int):
+    def __init__(self, player: 'Player', position: Vec, direction: Vec, speed: float, created_at: int):
         self.player = player
         self.position = position
-        self.velocity = Vec.unit(target - position) * speed
+        self.velocity = direction * speed
         self.created_at = created_at
 
     def move(self):
@@ -23,43 +23,51 @@ class Bullet:
 
 
 class Weapon(Attachment):
-    def __init__(self, hit_score, max_bullets, reload_timeout, shot_timeout, bullet_speed):
+    def __init__(self, hit_score: float, max_bullets: int, reload_timeout: int,
+                 shot_timeout: int, bullet_speed: float, shot_offset: float):
         super().__init__()
 
         self.hit_score = hit_score
         self.max_bullets = max_bullets
         self.reload_timeout = reload_timeout
         self.shot_timeout = shot_timeout
+        self.shot_offset = shot_offset
 
         self.bullet_speed = bullet_speed
 
         self.bullet_count = self.max_bullets
 
-        self.reload_timer = Timer()
-        self.reload_timer.set(self.reload_timeout)
+        self.reload_cooldown = Timer()
+        self.reload_cooldown.set(self.reload_timeout)
 
-        self.shot_timer = Timer()
+        self.shot_cooldown = Timer()
 
     def reload(self):
-        self.shot_timer.tick()
+        self.shot_cooldown.tick()
 
         if self.bullet_count < self.max_bullets:
-            self.reload_timer.tick()
+            self.reload_cooldown.tick()
 
-            if self.reload_timer.ready():
+            if self.reload_cooldown.is_over():
                 self.bullet_count += 1
-                self.reload_timer.set(self.reload_timeout)
+                self.reload_cooldown.set(self.reload_timeout)
 
     def shot(self, target: Vec, tick: int) -> List[Bullet]:
-        if self.bullet_count == 0 or not self.shot_timer.ready():
+        if self.bullet_count == 0 or not self.shot_cooldown.is_over():
             raise ShotError
 
-        self.shot_timer.set(self.shot_timeout)
+        self.shot_cooldown.set(self.shot_timeout)
 
         bullets = self.create_bullets(target, tick)
         self.bullet_count -= 1
 
         return bullets
+
+    def get_shot_direction(self, target: Vec):
+        return Vec.unit(target - self.player.movement.position)
+
+    def get_shot_position(self, direction: Vec):
+        return self.player.movement.position + direction * self.shot_offset
 
     def create_bullets(self, target: Vec, tick: int) -> List[Bullet]:
         raise NotImplemented
@@ -67,26 +75,51 @@ class Weapon(Attachment):
 
 class OneBulletWeapon(Weapon):
     def create_bullets(self, target: Vec, tick: int) -> List[Bullet]:
-        return [Bullet(self.player, self.player.position, target, self.bullet_speed, tick)]
+        direction = self.get_shot_direction(target)
+        shot_position = self.get_shot_position(direction)
+        return [Bullet(self.player, shot_position, direction, self.bullet_speed, tick)]
 
     @classmethod
     def pistol(cls) -> OneBulletWeapon:
-        return cls(50, 3, 30, 5, 10)
+        return cls(
+            config.global_config.pistol_hit_score,
+            config.global_config.pistol_max_bullets,
+            config.global_config.pistol_reload_timeout,
+            config.global_config.pistol_shot_timeout,
+            config.global_config.pistol_bullet_speed,
+            config.global_config.pistol_shot_offset
+        )
 
     @classmethod
     def sniper_rifle(cls) -> OneBulletWeapon:
-        return cls(200, 1, 60, 60, 20)
+        return cls(
+            config.global_config.sniper_rifle_hit_score,
+            config.global_config.sniper_rifle_max_bullets,
+            config.global_config.sniper_rifle_reload_timeout,
+            config.global_config.sniper_rifle_shot_timeout,
+            config.global_config.sniper_rifle_bullet_speed,
+            config.global_config.sniper_rifle_shot_offset
+        )
 
 
 class ShotgunWeapon(Weapon):
     def create_bullets(self, target: Vec, tick: int) -> List[Bullet]:
-        direction = target - self.player.position
+        direction = self.get_shot_direction(target)
+        shot_position = self.get_shot_position(direction)
+
         return [
-            Bullet(self.player, self.player.position, target, self.bullet_speed, tick),
-            Bullet(self.player, self.player.position, self.player.position + Vec.rotate(direction, math.pi/24), self.bullet_speed, tick),
-            Bullet(self.player, self.player.position, self.player.position + Vec.rotate(direction, -math.pi/24), self.bullet_speed, tick)
+            Bullet(self.player, shot_position, direction, self.bullet_speed, tick),
+            Bullet(self.player, shot_position, Vec.rotate(direction, math.pi/24), self.bullet_speed, tick),
+            Bullet(self.player, shot_position, Vec.rotate(direction, -math.pi/24), self.bullet_speed, tick)
         ]
 
     @classmethod
     def shotgun(cls) -> ShotgunWeapon:
-        return cls(50, 3, 120, 30, 6)
+        return cls(
+            config.global_config.shotgun_hit_score,
+            config.global_config.shotgun_max_bullets,
+            config.global_config.shotgun_reload_timeout,
+            config.global_config.shotgun_shot_timeout,
+            config.global_config.shotgun_bullet_speed,
+            config.global_config.shotgun_shot_offset
+        )

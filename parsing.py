@@ -9,7 +9,7 @@ from exceptions import InvalidAction
 
 
 def parse_command(game: Game, player_id: int, command: dict) -> \
-        Tuple[Optional[Move], Optional[Shot], Optional[PickWeapon]]:
+        Tuple[Optional[Move], Optional[Dash], Optional[Shot], Optional[Boolean]]:
     try:
         move = Move(**command['move'], game=game, player_id=player_id)
     except (KeyError, TypeError, InvalidAction):
@@ -21,11 +21,16 @@ def parse_command(game: Game, player_id: int, command: dict) -> \
         shot = None
 
     try:
-        pick_weapon = PickWeapon(command['pick_weapon'], game=game, player_id=player_id)
+        pick_weapon = Boolean(game, player_id, command['pick_weapon'])
     except (KeyError, TypeError, InvalidAction):
         pick_weapon = None
 
-    return move, shot, pick_weapon
+    try:
+        dash = Dash(game, player_id, command['dash'])
+    except (KeyError, TypeError, InvalidAction):
+        dash = None
+
+    return move, dash, shot, pick_weapon
 
 
 class Action:
@@ -52,15 +57,23 @@ class Point(Action):
 
         super().__init__(game, player_id)
 
-        if is_outside_box(point_x, point_y, config.global_config.box_width, config.global_config.box_height):
+        if is_outside_box(point_x, point_y, config.global_config.arena_width, config.global_config.arena_height):
             raise InvalidAction
 
         self.point = Vec(point_x, point_y)
 
 
+class Boolean(Action):
+    def __init__(self, game, player_id, value):
+        if not isinstance(value, bool) or value is not True:
+            raise InvalidAction
+
+        super().__init__(game, player_id)
+
+
 class Move(Direction):
     def apply(self):
-        self.player.move(self.direction)
+        self.player.set_direction(self.direction)
 
 
 class Shot(Point):
@@ -68,9 +81,6 @@ class Shot(Point):
         return self.player.shot(self.point, tick)
 
 
-class PickWeapon(Action):
-    def __init__(self, pick, game, player_id):
-        if pick is not True:
-            raise InvalidAction
-
-        super().__init__(game, player_id)
+class Dash(Boolean):
+    def apply(self):
+        return self.player.perform_dash()

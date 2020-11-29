@@ -9,5 +9,5 @@ class Timer:
         if self.ticks > 0:
             self.ticks -= 1
 
-    def ready(self):
+    def is_over(self):
         return self.ticks == 0

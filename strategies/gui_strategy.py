@@ -1,5 +1,4 @@
 import json
-import math
 
 import pyglet
 from pyglet import shapes
@@ -17,6 +16,7 @@ class GameWindow(pyglet.window.Window):
     KEY_DOWN = key.S
     KEY_PICK_WEAPON = key.F
     KEY_SHOT = pyglet.window.mouse.LEFT
+    KEY_DASH = pyglet.window.mouse.RIGHT
 
     PLAYER_COLORS = {
         0: (247, 35, 91),
@@ -42,18 +42,21 @@ class GameWindow(pyglet.window.Window):
 
     def __init__(self, *args, **kwargs):
         self.game_config = get_message()
-        super().__init__(self.game_config['box_width'], self.game_config['box_height'], *args, **kwargs)
+        super().__init__(self.game_config['arena_width'], self.game_config['arena_height'], *args, **kwargs)
 
         self.state = None
 
         self.key_handler = key.KeyStateHandler()
         self.push_handlers(self.key_handler)
         self.shot_point = None
+        self.dash_point = None
         self.last_score_diff = {player['id']: 0 for player in self.game_config['players']}
 
     def on_mouse_press(self, x, y, button, modifiers):
         if button == self.KEY_SHOT:
             self.shot_point = (x, y)
+        elif button == self.KEY_DASH:
+            self.dash_point = (x, y)
 
     def get_move_direction(self):
         x = 0
@@ -67,14 +70,31 @@ class GameWindow(pyglet.window.Window):
         if self.key_handler[self.KEY_DOWN]:
             y -= 1
 
-        if x != 0 or y != 0:
-            return {
-                'direction_x': x,
-                'direction_y': y
-            }
+        return {
+            'direction_x': x,
+            'direction_y': y
+        }
 
     def get_pick_weapon(self):
         return self.key_handler[self.KEY_PICK_WEAPON]
+
+    def get_dash_point(self):
+        for player in self.state['players']:
+            if player['id'] == self.game_config['my_id']:
+                if player['dash_cooldown'] != 0 or player['invulnerability_timeout'] != 0:
+                    self.dash_point = None
+                    return None
+
+                position_x = player['position_x']
+                position_y = player['position_y']
+
+        if self.dash_point is not None:
+            data = {
+                'direction_x': self.dash_point[0] - position_x,
+                'direction_y': self.dash_point[1] - position_y
+            }
+            self.dash_point = None
+            return data
 
     def get_shot_point(self):
         if self.shot_point is not None:
@@ -88,13 +108,18 @@ class GameWindow(pyglet.window.Window):
     def tick(self, dt):
         self.state = get_message()
 
-        move = self.get_move_direction()
+        command = {}
+
+        dash = self.get_dash_point()
+        if dash:
+            command['dash'] = True
+            command['move'] = dash
+        else:
+            command['move'] = self.get_move_direction()
+
         shot = self.get_shot_point()
         pick_weapon = self.get_pick_weapon()
 
-        command = {}
-        if move:
-            command['move'] = move
         if shot:
             command['shot'] = shot
         if pick_weapon:
@@ -140,16 +165,17 @@ class GameWindow(pyglet.window.Window):
             label = pyglet.text.Label(str(player['score']),
                                       font_name='Times New Roman',
                                       font_size=24,
-                                      x=self.game_config['box_width'] - 32,
-                                      y=self.game_config['box_height'] - 32 * (2 + place),
+                                      x=self.game_config['arena_width'] - 32,
+                                      y=self.game_config['arena_height'] - 32 * (2 + place),
                                       anchor_x='right', anchor_y='center', color=color + (255,),
                                       group=hud_group, batch=batch)
             figs.append(label)
 
-        for item in self.state['items']:
+        for item in self.state['item_spots']:
             color = self.ITEM_COLORS[item['id']]
 
-            spawn = shapes.Rectangle(item['spawn_x'] - self.game_config['item_radius'], item['spawn_y'] - self.game_config['item_radius'],
+            spawn = shapes.Rectangle(item['spot_x'] - self.game_config['item_radius'],
+                                     item['spot_y'] - self.game_config['item_radius'],
                                      self.game_config['item_radius'] * 2, self.game_config['item_radius'] * 2,
                                      color=color, group=background_group, batch=batch)
             figs.append(spawn)
@@ -194,7 +220,7 @@ class GameWindow(pyglet.window.Window):
         tick_label = pyglet.text.Label(str(self.state['ticks']),
                                        font_name='Times New Roman',
                                        font_size=24,
-                                       x=self.game_config['box_width'] - 32, y=self.game_config['box_height'] - 32,
+                                       x=self.game_config['arena_width'] - 32, y=self.game_config['arena_height'] - 32,
                                        anchor_x='right', anchor_y='center', color=(20, 20, 50, 255), batch=batch,
                                        group=hud_group)
         figs.append(tick_label)

@@ -1,5 +1,8 @@
 {
-  "max_tick_execution_time": 5.0,
+  "execution_timeout": 5.0,
+  "response_timeout": 2.0,
+  "command_size_limit": 4096,
+
   "players": [
     {
       "id": 0,
@@ -29,6 +32,7 @@
       "y": 634
     }
   ],
+
   "chainsaws": [
     [
       {
@@ -76,8 +80,8 @@
 
   "max_ticks": 2000000,
 
-  "box_width": 700,
-  "box_height": 700,
+  "arena_width": 700,
+  "arena_height": 700,
 
   "bullet_radius": 4,
   "bullet_speed": 15,
@@ -89,12 +93,36 @@
   "max_bullets": 3,
   "shot_timeout": 8,
   "reload_timeout": 60,
-  "invulnerability_timeout": 120,
+  "drop_out_invulnerability_timeout": 120,
+  "dash_duration": 20,
+  "dash_speed_bonus": 4,
+  "dash_cooldown": 120,
 
   "item_radius": 4,
   "boots_speed_effect": 2,
   "mask_hit_score_increment": 50,
   "ammunition_max_bullets_effect": 2,
   "ammunition_shot_timeout_effect": 4,
-  "ammunition_reload_timeout_effect": 30
+  "ammunition_reload_timeout_effect": 30,
+
+  "shotgun_hit_score": 50,
+  "shotgun_max_bullets": 3,
+  "shotgun_reload_timeout": 120,
+  "shotgun_shot_timeout": 30,
+  "shotgun_bullet_speed": 6,
+  "shotgun_shot_offset": 10,
+
+  "sniper_rifle_hit_score": 200,
+  "sniper_rifle_max_bullets": 1,
+  "sniper_rifle_reload_timeout": 60,
+  "sniper_rifle_shot_timeout": 60,
+  "sniper_rifle_bullet_speed": 20,
+  "sniper_rifle_shot_offset": 32,
+
+  "pistol_hit_score": 50,
+  "pistol_max_bullets": 3,
+  "pistol_reload_timeout": 30,
+  "pistol_shot_timeout": 5,
+  "pistol_bullet_speed": 10,
+  "pistol_shot_offset": 5
 }

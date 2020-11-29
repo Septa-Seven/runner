@@ -1,45 +1,27 @@
-from typing import Callable
+from typing import Callable, Optional
 
-from game.modifiers import CrownModifier, MaskModifier, BootsModifier, Modifier
+from game.modifiers import CrownModifier, Modifier
 from game.weapons import ShotgunWeapon, OneBulletWeapon
 
 
 class Item:
-    def pick(self, player) -> Modifier:
+    def apply(self, player) -> Optional[Modifier]:
         raise NotImplemented
 
 
 class Crown(Item):
     id = 0
 
-    def pick(self, player):
+    def apply(self, player):
         crown = CrownModifier()
         crown.attach(player)
         return crown
 
 
-class Mask(Item):
-    id = 1
-
-    def pick(self, player):
-        mask = MaskModifier()
-        mask.attach(player)
-        return mask
-
-
-class Boots(Item):
-    id = 2
-
-    def pick(self, player):
-        boots = BootsModifier()
-        boots.attach(player)
-        return boots
-
-
 class WeaponItem(Item):
     weapon_constructor: Callable = None
 
-    def pick(self, player):
+    def apply(self, player):
         player.pick_weapon(self.weapon_constructor())
 
 
@@ -53,4 +35,9 @@ class SniperRifleItem(WeaponItem):
     weapon_constructor = OneBulletWeapon.sniper_rifle
 
 
-ITEMS = [Crown, Mask, Boots, SniperRifleItem, ShotgunItem]
+class PistolItem(WeaponItem):
+    id = 5
+    weapon_constructor = OneBulletWeapon.pistol
+
+
+SPOT_ITEMS = {Crown, SniperRifleItem, ShotgunItem}

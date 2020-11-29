@@ -1,7 +1,5 @@
 import json
-import asyncio
-
-EXECUTION_TIMEOUT = 10.0
+import config
 
 
 class Client:
@@ -48,7 +46,7 @@ class TCPClient(Client):
         self.writer.write(msg_bytes)
 
     async def get_command(self):
-        command = await self.reader.readline()
+        command = await self.reader.read(config.global_config.command_size_limit)
         return json.loads(command.decode())
 
     def disconnect(self):

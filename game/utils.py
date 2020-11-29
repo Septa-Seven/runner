@@ -48,16 +48,19 @@ class Vec:
     def __eq__(self, other: Vec):
         return self.x == other.x and self.y == other.y
 
+    def __neg__(self):
+        return Vec(-self.x, -self.y)
+
     def length(self) -> float:
         return math.sqrt(self.x**2 + self.y**2)
 
     @staticmethod
     def unit(v: Vec) -> Vec:
-        l = v.length()
-        if l == 0:
+        length = v.length()
+        if length == 0:
             return Vec(0.0, 0.0)
-        else:
-            return Vec(v.x/l, v.y/l)
+
+        return Vec(v.x/length, v.y/length)
 
     @staticmethod
     def distance(v1: Vec, v2: Vec) -> float:
@@ -72,4 +75,3 @@ class Vec:
 
     def is_zero(self) -> bool:
         return self.x == 0.0 and self.y == 0.0
-

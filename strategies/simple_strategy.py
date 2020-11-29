@@ -22,8 +22,8 @@ class Player:
 class Strategy:
     def __init__(self):
         config = json.loads(input())
-        self.width = config['box_width']
-        self.height = config['box_height']
+        self.width = config['arena_width']
+        self.height = config['arena_height']
 
         self.players = {
             player['id']: Player(player['id'])
