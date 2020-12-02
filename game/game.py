@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Optional
 
 import random
 from itertools import chain
@@ -205,7 +206,7 @@ class Game:
     def is_ended(self):
         return self.ticks == config.global_config.max_ticks
 
-    def get_player_by_id(self, player_id):
+    def get_player_by_id(self, player_id) -> Optional[Player]:
         for player in self.players:
             if player.id == player_id:
                 return player

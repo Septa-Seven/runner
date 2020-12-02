@@ -1,14 +1,19 @@
+from typing import List
+
 import asyncio
 import json
+import random
 
 from game.game import Game
+from clients import Client
 import config
 from parsing import parse_command
 
 
 class GameLoop:
-    def __init__(self, game: Game, clients):
+    def __init__(self, game: Game, clients: List[Client]):
         self.game = game
+        random.shuffle(clients)
         self.clients = dict(enumerate(clients))
         self.keep_work = True
 
