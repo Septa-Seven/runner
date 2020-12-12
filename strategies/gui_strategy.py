@@ -42,7 +42,8 @@ class GameWindow(pyglet.window.Window):
 
     def __init__(self, *args, **kwargs):
         self.game_config = get_message()
-        super().__init__(self.game_config['arena_width'], self.game_config['arena_height'], *args, **kwargs)
+        super().__init__(self.game_config['arena']['width'],
+                         self.game_config['arena']['height'], *args, **kwargs)
 
         self.state = None
 
@@ -50,7 +51,7 @@ class GameWindow(pyglet.window.Window):
         self.push_handlers(self.key_handler)
         self.shot_point = None
         self.dash_point = None
-        self.last_score_diff = {player['id']: 0 for player in self.game_config['players']}
+        self.last_score_diff = {player['id']: 0 for player in self.game_config['players']['initial']}
 
     def on_mouse_press(self, x, y, button, modifiers):
         if button == self.KEY_SHOT:
@@ -144,7 +145,7 @@ class GameWindow(pyglet.window.Window):
             player_map[player['id']] = player
             color = self.PLAYER_COLORS[player['id']]
             circle = shapes.Circle(player['position_x'], player['position_y'],
-                                   self.game_config['player_radius'], color=color,
+                                   self.game_config['players']['radius'], color=color,
                                    group=players_group, batch=batch)
             if player['invulnerability_timeout'] > 0:
                 circle.opacity = 100
@@ -152,7 +153,7 @@ class GameWindow(pyglet.window.Window):
             figs.append(circle)
 
             bullets_count = pyglet.shapes.Rectangle(player['position_x'] + 10, player['position_y'] + 10, 10,
-                                          player['bullet_count']/self.game_config['max_bullets']*10,
+                                          player['bullet_count']*2,
                                           color=(100, 100, 100), batch=batch, group=hud_group)
             figs.append(bullets_count)
 
@@ -165,28 +166,28 @@ class GameWindow(pyglet.window.Window):
             label = pyglet.text.Label(str(player['score']),
                                       font_name='Times New Roman',
                                       font_size=24,
-                                      x=self.game_config['arena_width'] - 32,
-                                      y=self.game_config['arena_height'] - 32 * (2 + place),
+                                      x=self.game_config['arena']['width'] - 32,
+                                      y=self.game_config['arena']['height'] - 32 * (2 + place),
                                       anchor_x='right', anchor_y='center', color=color + (255,),
                                       group=hud_group, batch=batch)
             figs.append(label)
 
-        for item in self.state['item_spots']:
+        for item in self.state['items']:
             color = self.ITEM_COLORS[item['id']]
 
-            spawn = shapes.Rectangle(item['spot_x'] - self.game_config['item_radius'],
-                                     item['spot_y'] - self.game_config['item_radius'],
-                                     self.game_config['item_radius'] * 2, self.game_config['item_radius'] * 2,
+            spawn = shapes.Rectangle(item['position_x'] - self.game_config['weapons']['radius_as_item'],
+                                     item['position_y'] - self.game_config['weapons']['radius_as_item'],
+                                     self.game_config['weapons']['radius_as_item'] * 2,
+                                     self.game_config['weapons']['radius_as_item'] * 2,
                                      color=color, group=background_group, batch=batch)
             figs.append(spawn)
 
         for chainsaw in self.state['chainsaws']:
             circle = shapes.Circle(chainsaw['position_x'], chainsaw['position_y'],
-                                   self.game_config['chainsaw_radius'], color=self.CHAINSAW_COLOR,
+                                   chainsaw['radius'], color=self.CHAINSAW_COLOR,
                                    group=players_group, batch=batch)
             circle.opacity = 190
             figs.append(circle)
-
 
         # item_offsets = []
         # for ind in range(len(self.state['items'])):
@@ -213,14 +214,15 @@ class GameWindow(pyglet.window.Window):
         #     figs.append(circle)
 
         for bullet in self.state['bullets']:
-            circle = shapes.Circle(bullet['position_x'], bullet['position_y'], self.game_config['bullet_radius'],
+            circle = shapes.Circle(bullet['position_x'], bullet['position_y'], self.game_config['weapons']['bullet_radius'],
                                    color=self.PLAYER_COLORS[bullet['player_id']], group=players_group, batch=batch)
             figs.append(circle)
 
         tick_label = pyglet.text.Label(str(self.state['ticks']),
                                        font_name='Times New Roman',
                                        font_size=24,
-                                       x=self.game_config['arena_width'] - 32, y=self.game_config['arena_height'] - 32,
+                                       x=self.game_config['arena']['width'] - 32,
+                                       y=self.game_config['arena']['height'] - 32,
                                        anchor_x='right', anchor_y='center', color=(20, 20, 50, 255), batch=batch,
                                        group=hud_group)
         figs.append(tick_label)

@@ -2,6 +2,7 @@ from typing import Callable, Optional
 
 from game.modifiers import CrownModifier, Modifier
 from game.weapons import ShotgunWeapon, OneBulletWeapon
+from game.utils import Vec
 
 
 class Item:
@@ -26,18 +27,18 @@ class WeaponItem(Item):
 
 
 class ShotgunItem(WeaponItem):
-    id = 3
+    id = 1
     weapon_constructor = ShotgunWeapon.shotgun
 
 
 class SniperRifleItem(WeaponItem):
-    id = 4
+    id = 2
     weapon_constructor = OneBulletWeapon.sniper_rifle
 
 
 class PistolItem(WeaponItem):
-    id = 5
+    id = 3
     weapon_constructor = OneBulletWeapon.pistol
 
 
-SPOT_ITEMS = {Crown, SniperRifleItem, ShotgunItem}
+ITEM_CLASSES = [Crown, SniperRifleItem, ShotgunItem]

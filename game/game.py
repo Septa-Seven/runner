@@ -2,57 +2,34 @@ from __future__ import annotations
 from typing import Optional
 
 import random
-from itertools import chain
 
 from game.player import Player
 from game.utils import circles_collide, Vec, is_outside_box
-from game.items import SPOT_ITEMS, WeaponItem
-from game.moving_objects import PathMover
+from game.items import ITEM_CLASSES, WeaponItem
+from game.chainsaw import Chainsaw
 from game.modifiers import CrownModifier
-from exceptions import ShotError
+from game.weapons import ShotError
 import config
 
 
 class Game:
     def __init__(self):
         self.players = [
-            Player(player['id'], Vec(player['x'], player['y']))
-            for player in config.global_config.players
+            Player(player_initial.id, player_initial.position)
+            for player_initial in config.global_config.players.initial
         ]
 
         self.bullets = []
 
-        self.item_spots = {
-            Vec(**spot): None for spot in config.global_config.items
-        }
-        self.fill_item_spots(len(self.item_spots))
-
         self.chainsaws = [
-            PathMover(config.global_config.chainsaw_speed,
-                      [Vec(**point) for point in chainsaw_path])
-            for chainsaw_path in config.global_config.chainsaws
+            Chainsaw(chainsaw.radius, chainsaw.speed, chainsaw.path)
+            for chainsaw in config.global_config.chainsaws
         ]
 
+        self.items = {}
         self.modifiers = []
 
         self.ticks = 0
-
-    def fill_item_spots(self, n=1):
-        if n <= 0:
-            return
-
-        empty_spots = [item_spot for item_spot, item in self.item_spots.items() if item is None]
-        items_not_on_map = list(
-            SPOT_ITEMS - set(map(type, chain(
-                self.item_spots.values(),
-                chain.from_iterable(player.items for player in self.players)
-            )))
-        )
-        random.shuffle(empty_spots)
-        random.shuffle(items_not_on_map)
-
-        for _ in range(min(len(empty_spots), len(items_not_on_map), n)):
-            self.item_spots[empty_spots.pop()] = items_not_on_map.pop()()
 
     def tick(self, commands):
         move_directions, dashes, shots, pick_weapons = self.split_actions(commands)
@@ -70,6 +47,8 @@ class Game:
             player.move()
 
         self.item_logic(active_players, pick_weapons)
+
+        self.spawn_item()
 
         for item in self.modifiers:
             if isinstance(item, CrownModifier):
@@ -95,7 +74,7 @@ class Game:
             player for player in self.players if player.invulnerability.is_over()
         ]
 
-    def chainsaw_logic(self):
+    def chainsaw_logic(self) -> list[Player]:
         active_players = self.get_active_players()
 
         for chainsaw in self.chainsaws:
@@ -104,16 +83,15 @@ class Game:
             for player_index in range(len(active_players) - 1, -1, -1):
                 player = active_players[player_index]
                 if circles_collide(player.movement.position, chainsaw.position,
-                                   config.global_config.player_radius,
-                                   config.global_config.chainsaw_radius):
+                                   config.global_config.players.radius, chainsaw.radius):
                     self.drop_player(player)
                     del active_players[player_index]
 
             for bullet_index in range(len(self.bullets) - 1, -1, -1):
                 bullet = self.bullets[bullet_index]
                 if circles_collide(bullet.position, chainsaw.position,
-                                   config.global_config.bullet_radius,
-                                   config.global_config.chainsaw_radius):
+                                   config.global_config.weapons.bullet_radius,
+                                   chainsaw.radius):
                     del self.bullets[bullet_index]
 
         return active_players
@@ -122,8 +100,8 @@ class Game:
         for bullet_index in range(len(self.bullets) - 1, -1, -1):
             bullet = self.bullets[bullet_index]
             if is_outside_box(bullet.position.x, bullet.position.y,
-                              config.global_config.arena_width,
-                              config.global_config.arena_height):
+                              config.global_config.arena.width,
+                              config.global_config.arena.height):
                 del self.bullets[bullet_index]
                 continue
 
@@ -131,8 +109,8 @@ class Game:
                 player = active_players[player_index]
                 if (bullet.player != player
                         and circles_collide(bullet.position, player.movement.position,
-                                            config.global_config.bullet_radius,
-                                            config.global_config.player_radius)):
+                                            config.global_config.weapons.bullet_radius,
+                                            config.global_config.players.radius)):
 
                     bullet.player.score += bullet.player.weapon.hit_score
 
@@ -154,7 +132,7 @@ class Game:
             if pick_weapon.player in active_players
         ]
 
-        for item_spawn, item in self.item_spots.items():
+        for item_position, item in list(self.items.items()):
             if item is None:
                 continue
 
@@ -165,9 +143,9 @@ class Game:
 
             player_collides = None
             for player in check_players:
-                if circles_collide(player.movement.position, item_spawn,
-                                   config.global_config.player_radius,
-                                   config.global_config.item_radius):
+                if circles_collide(player.movement.position, item_position,
+                                   config.global_config.players.radius,
+                                   config.global_config.weapons.radius_as_item):
                     # item can't be picked up when it collides with multiple players
                     if player_collides is None:
                         player_collides = player
@@ -177,22 +155,35 @@ class Game:
 
             if player_collides:
                 modifier = player_collides.pick_item(item)
-                self.item_spots[item_spawn] = None
+                del self.items[item_position]
                 if modifier:
                     self.modifiers.append(modifier)
 
-    def drop_player(self, player):
-        fill_number = len(player.items)
+    def spawn_item(self):
+        if self.ticks % config.global_config.arena.item_spawn_period != 0:
+            return
 
-        player.drop_out(config.global_config.drop_out_invulnerability_timeout)
+        position = Vec(
+            random.uniform(0.0, config.global_config.arena.width),
+            random.uniform(0.0, config.global_config.arena.height)
+        )
+        while position in self.items:
+            position = Vec(
+                random.uniform(0.0, config.global_config.arena.width),
+                random.uniform(0.0, config.global_config.arena.height)
+            )
+
+        item = random.choice(ITEM_CLASSES)()
+        self.items[position] = item
+
+    def drop_player(self, player):
+        player.drop_out(config.global_config.players.drop_out_invulnerability_timeout)
 
         self.modifiers = [
             modifier
             for modifier in self.modifiers
             if not modifier.try_detach_from_player(player)
         ]
-
-        self.fill_item_spots(fill_number)
 
     def perform_shots(self, shots):
         for shot_action in shots:
@@ -204,9 +195,9 @@ class Game:
                 self.bullets += bullets
 
     def is_ended(self):
-        return self.ticks == config.global_config.max_ticks
+        return self.ticks == config.global_config.restrictions.max_ticks
 
-    def get_player_by_id(self, player_id) -> Optional[Player]:
+    def get_player_by_id(self, player_id: int) -> Optional[Player]:
         for player in self.players:
             if player.id == player_id:
                 return player
@@ -222,7 +213,6 @@ class Game:
                     'position_x': player.movement.position.x, 'position_y': player.movement.position.y,
                     'hit_score': player.weapon.hit_score,
                     'bullet_count': player.weapon.bullet_count,
-                    'reload_timeout': player.weapon.reload_cooldown.ticks,
                     'shot_timeout': player.weapon.shot_cooldown.ticks,
                     'invulnerability_timeout': player.invulnerability.ticks,
                     'dash': player.dash.ticks,
@@ -239,15 +229,6 @@ class Game:
                 }
                 for bullet in self.bullets
             ],
-            'item_spots': [
-                {
-                    'id': item.id,
-                    'spot_x': item_spot.x,
-                    'spot_y': item_spot.y,
-                }
-                for item_spot, item in self.item_spots.items()
-                if item is not None
-            ],
             'chainsaws': [
                 {
                     'position_x': chainsaw.position.x,
@@ -258,8 +239,8 @@ class Game:
                 }
                 for chainsaw in self.chainsaws
             ],
-            # 'modifiers': [
-            #     modifier.player.id
-            #     for modifier in self.modifiers
-            # ]
+            'items': [
+                {'id': item.id, 'position_x': item_position.x, 'position_y': item_position.y}
+                for item_position, item in self.items.items()
+            ]
         }

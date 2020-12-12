@@ -44,10 +44,10 @@ class Server:
 
     async def on_connect(self, reader, writer):
         # TODO close server if client disconnected
-        if len(self.clients) < len(config.global_config.players):
+        if len(self.clients) < len(config.global_config.players.initial):
             self.clients.append(TCPClient(reader, writer))
 
-            if len(self.clients) == len(config.global_config.players):
+            if len(self.clients) == len(config.global_config.players.initial):
                 game_loop = GameLoop(self.game, self.clients)
                 await game_loop.play()
 
@@ -64,7 +64,7 @@ def run_server(game: Game, args):
 
 
 def run_local(game: Game, args):
-    if len(args.strategies) != config.global_config.players:
+    if len(args.strategies) != len(config.global_config.players.initial):
         return
 
     loop = asyncio.get_event_loop()
@@ -98,7 +98,7 @@ def parsing():
 
 if __name__ == '__main__':
     args = parsing()
-    set_global_config(GameConfig(json.load(args.config)))
+    set_global_config(GameConfig(**json.load(args.config)))
 
     game = Game()
 

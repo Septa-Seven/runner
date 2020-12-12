@@ -5,7 +5,10 @@ from typing import Tuple, Optional
 import config
 from game.game import Game
 from game.utils import Vec, is_outside_box
-from exceptions import InvalidAction
+
+
+class InvalidAction(Exception):
+    pass
 
 
 def parse_command(game: Game, player_id: int, command: dict) -> \
@@ -57,7 +60,7 @@ class Point(Action):
 
         super().__init__(game, player_id)
 
-        if is_outside_box(point_x, point_y, config.global_config.arena_width, config.global_config.arena_height):
+        if is_outside_box(point_x, point_y, config.global_config.arena.width, config.global_config.arena.height):
             raise InvalidAction
 
         self.point = Vec(point_x, point_y)

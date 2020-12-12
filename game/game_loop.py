@@ -1,5 +1,3 @@
-from typing import List
-
 import asyncio
 import json
 import random
@@ -11,7 +9,7 @@ from parsing import parse_command
 
 
 class GameLoop:
-    def __init__(self, game: Game, clients: List[Client]):
+    def __init__(self, game: Game, clients: list[Client]):
         self.game = game
         random.shuffle(clients)
         self.clients = dict(enumerate(clients))
@@ -22,7 +20,7 @@ class GameLoop:
 
     async def play(self):
         # send game config
-        config_json = config.global_config.json()
+        config_json = config.global_config.raw_config.copy()
 
         messages = []
         for client_id in self.clients:
@@ -66,7 +64,7 @@ class GameLoop:
         # requests command but if it fails disconnects client
         try:
             return await asyncio.wait_for(self.clients[client_id].get_command(),
-                                          timeout=config.global_config.execution_timeout)
+                                          timeout=config.global_config.restrictions.execution_timeout)
         except:
             self.disconnect_client(client_id)
 
@@ -74,7 +72,7 @@ class GameLoop:
         # send message but if it fails disconnect client
         try:
             await asyncio.wait_for(self.clients[client_id].send_message(msg),
-                                   timeout=config.global_config.response_timeout)
+                                   timeout=config.global_config.restrictions.response_timeout)
         except Exception:
             self.disconnect_client(client_id)
 

@@ -1,9 +1,9 @@
-from typing import List
 from game.utils import Vec
 
 
-class PathMover:
-    def __init__(self, speed: float, path: List[Vec]):
+class Chainsaw:
+    def __init__(self, radius: float, speed: float, path: list[Vec]):
+        self.radius = radius
         self.position = path[0]
         self.speed = speed
         self.path = path
@@ -26,4 +26,5 @@ class PathMover:
             else:
                 if left_to_move != 0:
                     self.position = self.position + Vec.unit(self.target - self.position) * left_to_move
+
                 break
