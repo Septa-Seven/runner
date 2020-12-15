@@ -40,7 +40,6 @@ class WeaponConfig(ObjectConfig):
 
 
 class WeaponsConfig(ObjectConfig):
-    radius_as_item: float
     bullet_radius: float
 
     pistol: WeaponConfig
@@ -52,6 +51,7 @@ class ArenaConfig(ObjectConfig):
     width: float
     height: float
     item_spawn_period: int
+    item_radius: float
 
 
 class DashConfig(ObjectConfig):
@@ -81,12 +81,17 @@ class ChainsawConfig(ObjectConfig):
     path: list[Vec]
 
 
+class CrownConfig(ObjectConfig):
+    spot: Vec
+
+
 class GameConfig(ObjectConfig):
     restrictions: RestrictionsConfig
     arena: ArenaConfig
     weapons: WeaponsConfig
     players: PlayersConfig
     chainsaws: list[ChainsawConfig]
+    crown: CrownConfig
 
     def __init__(self, **kwargs):
         self.raw_config = kwargs

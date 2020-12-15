@@ -175,10 +175,10 @@ class GameWindow(pyglet.window.Window):
         for item in self.state['items']:
             color = self.ITEM_COLORS[item['id']]
 
-            spawn = shapes.Rectangle(item['position_x'] - self.game_config['weapons']['radius_as_item'],
-                                     item['position_y'] - self.game_config['weapons']['radius_as_item'],
-                                     self.game_config['weapons']['radius_as_item'] * 2,
-                                     self.game_config['weapons']['radius_as_item'] * 2,
+            spawn = shapes.Rectangle(item['position_x'] - self.game_config['arena']['item_radius'],
+                                     item['position_y'] - self.game_config['arena']['item_radius'],
+                                     self.game_config['arena']['item_radius'] * 2,
+                                     self.game_config['arena']['item_radius'] * 2,
                                      color=color, group=background_group, batch=batch)
             figs.append(spawn)
 

@@ -47,6 +47,10 @@ class Weapon(Attachment):
     def tick(self):
         self.shot_cooldown.tick()
 
+    def refill_bullets(self, count: int):
+        if self.bullet_count != -1:
+            self.bullet_count += count
+
     def shot(self, target: Vec, tick: int) -> tuple[list[Bullet], bool]:
         if not self.shot_cooldown.is_over():
             raise ShotError
@@ -77,28 +81,16 @@ class OneBulletWeapon(Weapon):
         shot_position = self.get_shot_position(direction)
         return [Bullet(self.player, shot_position, direction, self.bullet_speed, tick)]
 
-    @classmethod
-    def pistol(cls) -> OneBulletWeapon:
-        return cls(
-            config.global_config.weapons.pistol.hit_score,
-            config.global_config.weapons.pistol.initial_bullets,
-            config.global_config.weapons.pistol.shot_timeout,
-            config.global_config.weapons.pistol.bullet_speed,
-            config.global_config.weapons.pistol.shot_offset
-        )
 
-    @classmethod
-    def sniper_rifle(cls) -> OneBulletWeapon:
-        return cls(
-            config.global_config.weapons.sniper_rifle.hit_score,
-            config.global_config.weapons.sniper_rifle.initial_bullets,
-            config.global_config.weapons.sniper_rifle.shot_timeout,
-            config.global_config.weapons.sniper_rifle.bullet_speed,
-            config.global_config.weapons.sniper_rifle.shot_offset
-        )
+class Pistol(OneBulletWeapon):
+    pass
 
 
-class ShotgunWeapon(Weapon):
+class SniperRifle(OneBulletWeapon):
+    pass
+
+
+class Shotgun(Weapon):
     def create_bullets(self, target: Vec, tick: int) -> list[Bullet]:
         direction = self.get_shot_direction(target)
         shot_position = self.get_shot_position(direction)

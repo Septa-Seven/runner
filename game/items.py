@@ -1,8 +1,10 @@
 from typing import Callable, Optional
+from functools import partial
 
 from game.modifiers import CrownModifier, Modifier
-from game.weapons import ShotgunWeapon, OneBulletWeapon
-from game.utils import Vec
+from game.weapons import Shotgun, Pistol, SniperRifle
+
+import config
 
 
 class Item:
@@ -10,7 +12,7 @@ class Item:
         raise NotImplemented
 
 
-class Crown(Item):
+class CrownItem(Item):
     id = 0
 
     def apply(self, player):
@@ -20,25 +22,51 @@ class Crown(Item):
 
 
 class WeaponItem(Item):
-    weapon_constructor: Callable = None
 
     def apply(self, player):
-        player.pick_weapon(self.weapon_constructor())
+        player.pick_weapon(self.construct_weapon())
+
+    def construct_weapon(self):
+        raise NotImplementedError
 
 
 class ShotgunItem(WeaponItem):
     id = 1
-    weapon_constructor = ShotgunWeapon.shotgun
+
+    def construct_weapon(self):
+        return Shotgun(
+            config.global_config.weapons.shotgun.hit_score,
+            config.global_config.weapons.shotgun.initial_bullets,
+            config.global_config.weapons.shotgun.shot_timeout,
+            config.global_config.weapons.shotgun.bullet_speed,
+            config.global_config.weapons.shotgun.shot_offset
+        )
 
 
 class SniperRifleItem(WeaponItem):
     id = 2
-    weapon_constructor = OneBulletWeapon.sniper_rifle
+
+    def construct_weapon(self):
+        return SniperRifle(
+            config.global_config.weapons.sniper_rifle.hit_score,
+            config.global_config.weapons.sniper_rifle.initial_bullets,
+            config.global_config.weapons.sniper_rifle.shot_timeout,
+            config.global_config.weapons.sniper_rifle.bullet_speed,
+            config.global_config.weapons.sniper_rifle.shot_offset
+        )
 
 
 class PistolItem(WeaponItem):
     id = 3
-    weapon_constructor = OneBulletWeapon.pistol
+
+    def construct_weapon(self):
+        return Pistol(
+            config.global_config.weapons.pistol.hit_score,
+            config.global_config.weapons.pistol.initial_bullets,
+            config.global_config.weapons.pistol.shot_timeout,
+            config.global_config.weapons.pistol.bullet_speed,
+            config.global_config.weapons.pistol.shot_offset
+        )
 
 
-ITEM_CLASSES = [Crown, SniperRifleItem, ShotgunItem]
+WEAPON_ITEM_CLASSES = [SniperRifleItem, ShotgunItem]

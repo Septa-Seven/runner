@@ -90,8 +90,11 @@ class Player:
         return item.apply(self)
 
     def pick_weapon(self, weapon: Weapon):
-        self.weapon = weapon
-        weapon.attach(self)
+        if type(self.weapon) is type(weapon):
+            self.weapon.refill_bullets(weapon.bullet_count)
+        else:
+            self.weapon = weapon
+            weapon.attach(self)
 
     def drop_out(self, invulnerability_cooldown: int):
         self.invulnerability.set(invulnerability_cooldown)

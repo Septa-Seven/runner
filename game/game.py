@@ -4,8 +4,8 @@ from typing import Optional
 import random
 
 from game.player import Player
-from game.utils import circles_collide, Vec, is_outside_box
-from game.items import ITEM_CLASSES, WeaponItem
+from game.utils import circles_collide, is_outside_box, random_position
+from game.items import WEAPON_ITEM_CLASSES, WeaponItem, CrownItem
 from game.chainsaw import Chainsaw
 from game.modifiers import CrownModifier
 from game.weapons import ShotError
@@ -26,7 +26,9 @@ class Game:
             for chainsaw in config.global_config.chainsaws
         ]
 
-        self.items = {}
+        self.items = {
+            config.global_config.crown.spot: CrownItem()
+        }
         self.modifiers = []
 
         self.ticks = 0
@@ -133,8 +135,6 @@ class Game:
         ]
 
         for item_position, item in list(self.items.items()):
-            if item is None:
-                continue
 
             if isinstance(item, WeaponItem):
                 check_players = players_trying_pick
@@ -145,7 +145,7 @@ class Game:
             for player in check_players:
                 if circles_collide(player.movement.position, item_position,
                                    config.global_config.players.radius,
-                                   config.global_config.weapons.radius_as_item):
+                                   config.global_config.arena.item_radius):
                     # item can't be picked up when it collides with multiple players
                     if player_collides is None:
                         player_collides = player
@@ -163,20 +163,12 @@ class Game:
         if self.ticks % config.global_config.arena.item_spawn_period != 0:
             return
 
-        position = Vec(
-            random.uniform(0.0, config.global_config.arena.width),
-            random.uniform(0.0, config.global_config.arena.height)
-        )
-        while position in self.items:
-            position = Vec(
-                random.uniform(0.0, config.global_config.arena.width),
-                random.uniform(0.0, config.global_config.arena.height)
-            )
-
-        item = random.choice(ITEM_CLASSES)()
-        self.items[position] = item
+        self.items[self.get_random_free_position()] = random.choice(WEAPON_ITEM_CLASSES)()
 
     def drop_player(self, player):
+        if any(isinstance(item, CrownItem) for item in player.items):
+            self.items[config.global_config.crown.spot] = CrownItem()
+
         player.drop_out(config.global_config.players.drop_out_invulnerability_timeout)
 
         self.modifiers = [
@@ -201,6 +193,15 @@ class Game:
         for player in self.players:
             if player.id == player_id:
                 return player
+
+    def get_random_free_position(self):
+        position = random_position(0.0, config.global_config.arena.width,
+                                   0.0, config.global_config.arena.height)
+        while position in self.items:
+            position = random_position(0.0, config.global_config.arena.width,
+                                       0.0, config.global_config.arena.height)
+
+        return position
 
     def get_state(self):
         return {

@@ -1,5 +1,6 @@
 from __future__ import annotations
 import math
+import random
 
 
 def is_outside_box(x: float, y: float, width: float, height: float) -> bool:
@@ -12,6 +13,13 @@ def circles_collide(center1: Vec, center2: Vec, r1: float, r2: float) -> bool:
 
 def point_in_circle(p: Vec, c: Vec, r: float) -> bool:
     return Vec.distance(p, c) < r
+
+
+def random_position(x1: float, x2: float, y1: float, y2: float):
+    return Vec(
+        random.uniform(x1, x2),
+        random.uniform(y1, y2)
+    )
 
 
 class Vec:
