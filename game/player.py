@@ -33,11 +33,12 @@ class Movement:
 
 
 class Player:
-    def __init__(self, id: int, position: Vec):
+    def __init__(self, id: int, spawn_position: Vec):
         self.id = id
         self.score = 0
 
-        self.movement = Movement(position)
+        self.spawn_position = spawn_position
+        self.movement = Movement(spawn_position)
 
         self.invulnerability = Timer()
         self.dash_cooldown = Timer()
@@ -98,5 +99,6 @@ class Player:
 
     def drop_out(self, invulnerability_cooldown: int):
         self.invulnerability.set(invulnerability_cooldown)
+        self.movement.position = self.spawn_position
         self.items = []
         self.pick_item(PistolItem())

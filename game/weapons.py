@@ -7,8 +7,6 @@ from game.timer import Timer
 from game.modifiers import Attachment
 from game.utils import Vec
 
-import config
-
 
 class ShotError(Exception):
     pass
@@ -100,13 +98,3 @@ class Shotgun(Weapon):
             Bullet(self.player, shot_position, Vec.rotate(direction, math.pi/24), self.bullet_speed, tick),
             Bullet(self.player, shot_position, Vec.rotate(direction, -math.pi/24), self.bullet_speed, tick)
         ]
-
-    @classmethod
-    def shotgun(cls) -> ShotgunWeapon:
-        return cls(
-            config.global_config.weapons.shotgun.hit_score,
-            config.global_config.weapons.shotgun.initial_bullets,
-            config.global_config.weapons.shotgun.shot_timeout,
-            config.global_config.weapons.shotgun.bullet_speed,
-            config.global_config.weapons.shotgun.shot_offset
-        )

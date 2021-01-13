@@ -15,8 +15,8 @@ import config
 class Game:
     def __init__(self):
         self.players = [
-            Player(player_initial.id, player_initial.position)
-            for player_initial in config.global_config.players.initial
+            Player(player_spawn.id, player_spawn.position)
+            for player_spawn in config.global_config.players.spawns
         ]
 
         self.bullets = []
@@ -27,8 +27,10 @@ class Game:
         ]
 
         self.items = {
-            config.global_config.crown.spot: CrownItem()
+            spot: random.choice(WEAPON_ITEM_CLASSES)()
+            for spot in config.global_config.items.spots
         }
+        self.items[config.global_config.items.crown.spot] = CrownItem()
         self.modifiers = []
 
         self.ticks = 0
@@ -92,7 +94,7 @@ class Game:
             for bullet_index in range(len(self.bullets) - 1, -1, -1):
                 bullet = self.bullets[bullet_index]
                 if circles_collide(bullet.position, chainsaw.position,
-                                   config.global_config.weapons.bullet_radius,
+                                   config.global_config.items.weapons.bullet_radius,
                                    chainsaw.radius):
                     del self.bullets[bullet_index]
 
@@ -111,7 +113,7 @@ class Game:
                 player = active_players[player_index]
                 if (bullet.player != player
                         and circles_collide(bullet.position, player.movement.position,
-                                            config.global_config.weapons.bullet_radius,
+                                            config.global_config.items.weapons.bullet_radius,
                                             config.global_config.players.radius)):
 
                     bullet.player.score += bullet.player.weapon.hit_score
@@ -145,7 +147,7 @@ class Game:
             for player in check_players:
                 if circles_collide(player.movement.position, item_position,
                                    config.global_config.players.radius,
-                                   config.global_config.arena.item_radius):
+                                   config.global_config.items.radius):
                     # item can't be picked up when it collides with multiple players
                     if player_collides is None:
                         player_collides = player
@@ -160,14 +162,21 @@ class Game:
                     self.modifiers.append(modifier)
 
     def spawn_item(self):
-        if self.ticks % config.global_config.arena.item_spawn_period != 0:
+        if self.ticks % config.global_config.items.spawn_period != 0:
             return
 
-        self.items[self.get_random_free_position()] = random.choice(WEAPON_ITEM_CLASSES)()
+        empty_spots = list(set(config.global_config.items.spots).difference(self.items.keys()))
+        if not empty_spots:
+            return
+
+        spot = random.choice(empty_spots)
+        item = random.choice(WEAPON_ITEM_CLASSES)()
+
+        self.items[spot] = item
 
     def drop_player(self, player):
         if any(isinstance(item, CrownItem) for item in player.items):
-            self.items[config.global_config.crown.spot] = CrownItem()
+            self.items[config.global_config.items.crown.spot] = CrownItem()
 
         player.drop_out(config.global_config.players.drop_out_invulnerability_timeout)
 
@@ -193,15 +202,6 @@ class Game:
         for player in self.players:
             if player.id == player_id:
                 return player
-
-    def get_random_free_position(self):
-        position = random_position(0.0, config.global_config.arena.width,
-                                   0.0, config.global_config.arena.height)
-        while position in self.items:
-            position = random_position(0.0, config.global_config.arena.width,
-                                       0.0, config.global_config.arena.height)
-
-        return position
 
     def get_state(self):
         return {

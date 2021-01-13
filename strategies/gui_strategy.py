@@ -51,7 +51,7 @@ class GameWindow(pyglet.window.Window):
         self.push_handlers(self.key_handler)
         self.shot_point = None
         self.dash_point = None
-        self.last_score_diff = {player['id']: 0 for player in self.game_config['players']['initial']}
+        self.last_score_diff = {player['id']: 0 for player in self.game_config['players']['spawns']}
 
     def on_mouse_press(self, x, y, button, modifiers):
         if button == self.KEY_SHOT:
@@ -175,10 +175,10 @@ class GameWindow(pyglet.window.Window):
         for item in self.state['items']:
             color = self.ITEM_COLORS[item['id']]
 
-            spawn = shapes.Rectangle(item['position_x'] - self.game_config['arena']['item_radius'],
-                                     item['position_y'] - self.game_config['arena']['item_radius'],
-                                     self.game_config['arena']['item_radius'] * 2,
-                                     self.game_config['arena']['item_radius'] * 2,
+            spawn = shapes.Rectangle(item['position_x'] - self.game_config['items']['radius'],
+                                     item['position_y'] - self.game_config['items']['radius'],
+                                     self.game_config['items']['radius'] * 2,
+                                     self.game_config['items']['radius'] * 2,
                                      color=color, group=background_group, batch=batch)
             figs.append(spawn)
 
@@ -189,33 +189,11 @@ class GameWindow(pyglet.window.Window):
             circle.opacity = 190
             figs.append(circle)
 
-        # item_offsets = []
-        # for ind in range(len(self.state['items'])):
-        #     x = math.cos(math.pi * self.state['ticks']/32 + 2 * math.pi / len(self.state['items']) * ind) * self.game_config['player_radius'] * 2
-        #     y = math.sin(math.pi * self.state['ticks']/32 + 2 * math.pi / len(self.state['items']) * ind) * self.game_config['player_radius'] * 2
-        #
-        #     item_offsets.append((x, y))
-        #
-        # for player_id, items in player_items.items():
-        #     for ind, item in enumerate(items):
-        #         x = player_map[player_id]['position_x'] + item_offsets[ind][0]
-        #         y = player_map[player_id]['position_y'] + item_offsets[ind][1]
-        #         color = self.ITEM_COLORS[item['id']]
-        #         circle = shapes.Circle(x, y,
-        #                                self.game_config['item_radius'], color=color,
-        #                                group=background_group, batch=batch)
-        #         figs.append(circle)
-        #
-        # for item in not_picked:
-        #     color = self.ITEM_COLORS[item['id']]
-        #     circle = shapes.Circle(item['spawn_x'], item['spawn_y'],
-        #                            self.game_config['item_radius'], color=color,
-        #                            group=players_group, batch=batch)
-        #     figs.append(circle)
-
         for bullet in self.state['bullets']:
-            circle = shapes.Circle(bullet['position_x'], bullet['position_y'], self.game_config['weapons']['bullet_radius'],
-                                   color=self.PLAYER_COLORS[bullet['player_id']], group=players_group, batch=batch)
+            circle = shapes.Circle(bullet['position_x'], bullet['position_y'],
+                                   self.game_config['items']['weapons']['bullet_radius'],
+                                   color=self.PLAYER_COLORS[bullet['player_id']],
+                                   group=players_group, batch=batch)
             figs.append(circle)
 
         tick_label = pyglet.text.Label(str(self.state['ticks']),

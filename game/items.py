@@ -1,5 +1,4 @@
-from typing import Callable, Optional
-from functools import partial
+from typing import Optional
 
 from game.modifiers import CrownModifier, Modifier
 from game.weapons import Shotgun, Pistol, SniperRifle
@@ -35,11 +34,11 @@ class ShotgunItem(WeaponItem):
 
     def construct_weapon(self):
         return Shotgun(
-            config.global_config.weapons.shotgun.hit_score,
-            config.global_config.weapons.shotgun.initial_bullets,
-            config.global_config.weapons.shotgun.shot_timeout,
-            config.global_config.weapons.shotgun.bullet_speed,
-            config.global_config.weapons.shotgun.shot_offset
+            config.global_config.items.weapons.shotgun.hit_score,
+            config.global_config.items.weapons.shotgun.initial_bullets,
+            config.global_config.items.weapons.shotgun.shot_timeout,
+            config.global_config.items.weapons.shotgun.bullet_speed,
+            config.global_config.items.weapons.shotgun.shot_offset
         )
 
 
@@ -48,11 +47,11 @@ class SniperRifleItem(WeaponItem):
 
     def construct_weapon(self):
         return SniperRifle(
-            config.global_config.weapons.sniper_rifle.hit_score,
-            config.global_config.weapons.sniper_rifle.initial_bullets,
-            config.global_config.weapons.sniper_rifle.shot_timeout,
-            config.global_config.weapons.sniper_rifle.bullet_speed,
-            config.global_config.weapons.sniper_rifle.shot_offset
+            config.global_config.items.weapons.sniper_rifle.hit_score,
+            config.global_config.items.weapons.sniper_rifle.initial_bullets,
+            config.global_config.items.weapons.sniper_rifle.shot_timeout,
+            config.global_config.items.weapons.sniper_rifle.bullet_speed,
+            config.global_config.items.weapons.sniper_rifle.shot_offset
         )
 
 
@@ -61,11 +60,11 @@ class PistolItem(WeaponItem):
 
     def construct_weapon(self):
         return Pistol(
-            config.global_config.weapons.pistol.hit_score,
-            config.global_config.weapons.pistol.initial_bullets,
-            config.global_config.weapons.pistol.shot_timeout,
-            config.global_config.weapons.pistol.bullet_speed,
-            config.global_config.weapons.pistol.shot_offset
+            config.global_config.items.weapons.pistol.hit_score,
+            config.global_config.items.weapons.pistol.initial_bullets,
+            config.global_config.items.weapons.pistol.shot_timeout,
+            config.global_config.items.weapons.pistol.bullet_speed,
+            config.global_config.items.weapons.pistol.shot_offset
         )
 
 

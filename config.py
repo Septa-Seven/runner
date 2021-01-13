@@ -50,8 +50,6 @@ class WeaponsConfig(ObjectConfig):
 class ArenaConfig(ObjectConfig):
     width: float
     height: float
-    item_spawn_period: int
-    item_radius: float
 
 
 class DashConfig(ObjectConfig):
@@ -60,7 +58,7 @@ class DashConfig(ObjectConfig):
     speed_bonus: float
 
 
-class PlayerInitialData(ObjectConfig):
+class PlayerSpawn(ObjectConfig):
     id: int
     position: Vec
 
@@ -71,7 +69,7 @@ class PlayersConfig(ObjectConfig):
     drop_out_invulnerability_timeout: int
     dash: DashConfig
 
-    initial: list[PlayerInitialData]
+    spawns: list[PlayerSpawn]
 
 
 class ChainsawConfig(ObjectConfig):
@@ -85,13 +83,20 @@ class CrownConfig(ObjectConfig):
     spot: Vec
 
 
+class ItemsConfig(ObjectConfig):
+    spots: list[Vec]
+    spawn_period: int
+    radius: float
+    crown: CrownConfig
+    weapons: WeaponsConfig
+
+
 class GameConfig(ObjectConfig):
     restrictions: RestrictionsConfig
     arena: ArenaConfig
-    weapons: WeaponsConfig
+    items: ItemsConfig
     players: PlayersConfig
     chainsaws: list[ChainsawConfig]
-    crown: CrownConfig
 
     def __init__(self, **kwargs):
         self.raw_config = kwargs

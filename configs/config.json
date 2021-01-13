@@ -7,34 +7,43 @@
   },
   "arena": {
     "width": 700,
-    "height": 700,
-    "item_spawn_period": 400,
-    "item_radius": 4
+    "height": 700
   },
-  "weapons": {
-    "bullet_radius": 4,
+  "items": {
+    "spots": [
+      {"x": 64, "y": 64},
+      {"x": 64, "y": 636},
+      {"x": 636, "y": 64},
+      {"x": 636, "y": 636}
+    ],
+    "spawn_period": 400,
+    "radius": 4,
+    "weapons": {
+      "bullet_radius": 4,
 
-    "shotgun": {
-      "hit_score": 50,
-      "initial_bullets": 5,
-      "shot_timeout": 40,
-      "bullet_speed": 8,
-      "shot_offset": 10
+      "shotgun": {
+        "hit_score": 50,
+        "initial_bullets": 5,
+        "shot_timeout": 40,
+        "bullet_speed": 8,
+        "shot_offset": 10
+      },
+      "sniper_rifle": {
+        "hit_score": 200,
+        "initial_bullets": 3,
+        "shot_timeout": 60,
+        "bullet_speed": 20,
+        "shot_offset": 32
+      },
+      "pistol": {
+        "hit_score": 50,
+        "initial_bullets": -1,
+        "shot_timeout": 20,
+        "bullet_speed": 10,
+        "shot_offset": 5
+      }
     },
-    "sniper_rifle": {
-      "hit_score": 200,
-      "initial_bullets": 3,
-      "shot_timeout": 60,
-      "bullet_speed": 20,
-      "shot_offset": 32
-    },
-    "pistol": {
-      "hit_score": 50,
-      "initial_bullets": -1,
-      "shot_timeout": 20,
-      "bullet_speed": 10,
-      "shot_offset": 5
-    }
+    "crown": {"spot": {"x": 350, "y": 350}}
   },
   "players": {
     "radius": 8,
@@ -47,11 +56,10 @@
       "speed_bonus": 4
     },
 
-    "initial": [
+    "spawns": [
       {"id": 0, "position": {"x": 284, "y": 350}},
       {"id": 1, "position": {"x": 350, "y": 284}}
     ]
   },
-  "crown": {"spot": {"x": 350, "y": 350}},
   "chainsaws": []
 }
