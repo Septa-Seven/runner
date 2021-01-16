@@ -4,7 +4,7 @@ from typing import Optional
 import random
 
 from game.player import Player
-from game.utils import circles_collide, is_outside_box, random_position
+from game.utils import circles_collide, is_outside_box
 from game.items import WEAPON_ITEM_CLASSES, WeaponItem, CrownItem
 from game.chainsaw import Chainsaw
 from game.modifiers import CrownModifier
@@ -237,6 +237,7 @@ class Game:
                     'target_index': chainsaw.target_index,
                     'target_x': chainsaw.target.x,
                     'target_y': chainsaw.target.y,
+                    'radius': chainsaw.radius,
                 }
                 for chainsaw in self.chainsaws
             ],

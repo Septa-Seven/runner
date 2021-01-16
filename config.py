@@ -68,14 +68,12 @@ class PlayersConfig(ObjectConfig):
     speed: float
     drop_out_invulnerability_timeout: int
     dash: DashConfig
-
     spawns: list[PlayerSpawn]
 
 
 class ChainsawConfig(ObjectConfig):
     radius: float
     speed: float
-
     path: list[Vec]
 
 
